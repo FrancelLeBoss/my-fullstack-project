@@ -1,0 +1,53 @@
+services:
+  # Le service de base de données PostgreSQL
+  db:
+    image: postgres:15
+    # Définition des variables d'environnement pour la base de données
+    environment:
+      POSTGRES_DB: my_shop_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: francelKazakh*2022
+    # Mappage des ports: le port 5432 du conteneur est exposé sur le port 5432 de la machine hôte
+    ports:
+      - "5433:5432"
+    # Utilisation d'un volume pour que les données de la base de données persistent même après l'arrêt du conteneur
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  # Le service backend (Django, Python)
+  backend:
+    build: ./backend
+    # Mappage des ports: le port 8000 du conteneur est exposé sur le port 8000 de la machine hôte
+    ports:
+      - "8000:8000"
+    # Mappage des volumes pour la persistance du code
+    volumes:
+      - ./backend:/app
+    # Variables d'environnement pour que le backend puisse se connecter à la base de données
+    environment:
+      DATABASE_URL: "postgres://postgres:francelKazakh*2022@db:5432/my_shop_db"
+    # Dépendance sur le service 'db'. Docker s'assurera que 'db' est démarré avant de lancer 'backend'.
+    depends_on:
+      - db
+    # Commande pour démarrer le serveur de l'application
+    command: python manage.py runserver 0.0.0.0:8000
+
+  # Le service frontend (React)
+  frontend:
+    build: ./frontend
+    # Mappage des ports: le port 5173 du conteneur est exposé sur le port 5173 de la machine hôte
+    ports:
+      - "5173:5173"
+    # Mappage des volumes. Le volume pour `node_modules` est séparé pour éviter les problèmes de performances.
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    # Dépendance sur le service 'backend' pour que le frontend puisse faire ses requêtes.
+    depends_on:
+      - backend
+
+# Définition du volume de données. C'est ici que Docker stocke les données de manière persistante.
+volumes:
+  db_data:
