@@ -5,13 +5,14 @@ import Swal from "sweetalert2";
 import type {
   Product as ProductType,
   ProductVariant,
-  ProductSize,
+  Product_with_Stars,
   ProductVariantImage,
   CommentType,
 } from "../types/Product";
 import type { RootState } from "../redux/store";
 import { se } from "date-fns/locale";
 import useComment from "./useComment";
+import useWishlist from "./useWishlist";
 
 /**
  * useProduct
@@ -37,12 +38,13 @@ export default function useProduct(productId?: string | number | null) {
   const [relatedBySubCat, setRelatedBySubCat] = useState<ProductType[]>([]);
   const [relatedByCat, setRelatedByCat] = useState<ProductType[]>([]);
   const [userInfos, setUserInfos] = useState<Record<number, { username: string }>>({});
-  const [productWished, setProductWished] = useState(false);
+  const [topRatedProducts, setTopRatedProducts] = useState<Product_with_Stars[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { setCommentsState } = useComment(productId);
+  const { checkWishlist } = useWishlist();
 
   const getUserInfo = useCallback(
     async (userId: number) => {
@@ -58,6 +60,22 @@ export default function useProduct(productId?: string | number | null) {
     },
     [userInfos]
   );
+
+  const fetchTopRatedProducts = useCallback(
+    async (category?:number,subcategory?:number,limit?:number) => {
+      try {
+        const res = await axiosInstance.get<Product_with_Stars[]>(`api/products/top-rated/${category ? `?category=${category}` : ''}${subcategory ? `${category ? '&' : '?'}subcategory=${subcategory}` : ''}${limit ? `${(category || subcategory) ? '&' : '?'}limit=${limit}` : ''}`);
+        setTopRatedProducts(res.data || []);
+      } catch (err) {
+        console.error("fetchTopRatedProducts error:", err);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchTopRatedProducts();
+  }, [fetchTopRatedProducts]);
 
   const fetchProduct = useCallback(
     async (id?: string | number | null) => {
@@ -119,72 +137,7 @@ export default function useProduct(productId?: string | number | null) {
     []
   );
 
-  const checkWishlist = useCallback(
-    async (variantId?: number) => {
-      if (!user?.id || !variantId) {
-        setProductWished(false);
-        return false;
-      }
-      try {
-        const res = await axiosInstance.post<{ exists: boolean }>(`api/wishlist/already_exists/`, {
-          user_id: user.id,
-          variant_id: variantId,
-        });
-        setProductWished(res.data.exists);
-        return res.data.exists;
-      } catch (err) {
-        console.error("checkWishlist error:", err);
-        return false;
-      }
-    },
-    [user]
-  );
-
-  const addToWishlist = useCallback(
-    async (variantId?: number) => {
-      if (!user?.id || !variantId) return null;
-      try {
-        const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/add/`, { user_id: user.id, variant_id: variantId });
-        // optionnel : récupérer variant details et dispatcher vers store
-        const variantResp = await axiosInstance.get(`api/products/variant/${variantId}/`);
-        dispatch({ type: "wishlist/addToWishlist", payload: { id: res.data.wishlist_item.id, variant: variantResp.data } });
-        setProductWished(true);
-        Swal.fire({
-          icon: 'success',
-          title: 'Product added to wishlist',
-          showConfirmButton: false,
-          timer: 1500
-        });
-        return res.data;
-      } catch (err) {
-        console.error("addToWishlist error:", err);
-        return null;
-      }
-    },
-    [user, dispatch]
-  );
-
-  const removeFromWishlist = useCallback(
-    async (variantId?: number) => {
-      if (!user?.id || !variantId) return null;
-      try {
-        const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/remove/`, { user_id: user.id, variant_id: variantId });
-        dispatch({ type: "wishlist/removeFromWishlist", payload: { itemDeleted: res.data.wishlist_item.id } });
-        setProductWished(false);
-        Swal.fire({
-                  icon: 'success',
-                  title: 'Product removed from wishlist',
-                  showConfirmButton: false,
-                  timer: 1500
-                });
-        return res.data;
-      } catch (err) {
-        console.error("removeFromWishlist error:", err);
-        return null;
-      }
-    },
-    [user, dispatch]
-  );
+  
 
   // small helpers
   const mainVariant = useCallback((p: ProductType | null): ProductVariant | undefined => p?.variants?.[0], []);
@@ -213,16 +166,14 @@ export default function useProduct(productId?: string | number | null) {
     loading,
     error,
     category,
+    topRatedProducts,
     relatedByCat,
     relatedBySubCat,
     userInfos,
-    productWished,
     apiBaseUrl,
     refetch: fetchProduct,
+    fetchTopRatedProducts,
     fetchRelated,
-    checkWishlist,
-    addToWishlist,
-    removeFromWishlist,
     mainVariant,
     indexOfMainImageOfVariant,
   };

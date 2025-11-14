@@ -2,17 +2,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { CartItem, ProductSize } from "../types/Product";
 
-// interface CartItem {
-//   id: number;
-//   quantity: number;
-//   variant?: {
-//     price?: number;
-//     [key: string]: any;
-//   };
-//   size?: ProductSize;
-//   [key: string]: any;
-// }
-
 interface CartState {
   items: CartItem[];
   totalAmount: number; // Montant total du panier (probablement le nombre d'articles uniques ou la somme des quantités)

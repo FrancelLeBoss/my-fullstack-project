@@ -46,6 +46,7 @@ export default function useCart() {
   }, [localItems]);
 
   const addToCart = useCallback(async (variantId: number, sizeId: number | null, quantity: number) => {
+    console.log("Adding to cart of:", { user});
     if (!user) {
           Swal.fire({
             icon: 'warning',

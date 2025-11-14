@@ -25,6 +25,17 @@ export interface Product {
   category: number;
   variants: ProductVariant[];
 }
+export interface Product_with_Stars {
+  id: number;
+  title: string;
+  short_desc: string;
+  long_desc: string;
+  subCategory: number;
+  gender: string;
+  category: number;
+  variants: ProductVariant[];
+  avg_rating: number;
+}
 
 export interface VariantImage {
   id: number;

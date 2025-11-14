@@ -73,6 +73,45 @@ def get_product(request, pk):
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=404)
 
+@api_view(["GET"])
+def get_top_rated_products(request, category=None, subcategory=None, limit=10):
+    ratings = Rating.objects.select_related("product")
+
+    product_ratings = {}
+    for rating in ratings:
+        product = rating.product
+        if product:
+            if category and product.category.id != int(category):
+                continue
+            if subcategory and product.subCategory.id != int(subcategory):
+                continue
+            if product.id not in product_ratings:
+                product_ratings[product.id] = {
+                    "product": product,
+                    "total_stars": 0,
+                    "count": 0,
+                }
+            product_ratings[product.id]["total_stars"] += rating.stars
+            product_ratings[product.id]["count"] += 1
+
+    averaged_ratings = []
+    for prod_id, data in product_ratings.items():
+        avg_rating = data["total_stars"] / data["count"]
+        averaged_ratings.append((data["product"], avg_rating))
+
+    averaged_ratings.sort(key=lambda x: x[1], reverse=True)
+
+    # Limiter
+    top_products = averaged_ratings[:int(limit)]
+
+    # Construire la réponse enrichie
+    response_data = []
+    for product, avg_rating in top_products:
+        serialized = ProductSerializer(product).data
+        serialized["avg_rating"] = avg_rating
+        response_data.append(serialized)
+
+    return Response(response_data)
 
 @api_view(["GET"])
 def get_product_by_category(request, category_id):

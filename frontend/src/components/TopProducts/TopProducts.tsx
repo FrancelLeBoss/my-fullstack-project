@@ -1,45 +1,31 @@
 import React, { useEffect,useState } from 'react'
-import Image1 from '../../assets/shirt/shirt.png'
-import Image2 from '../../assets/shirt/shirt2.png'
-import Image3 from '../../assets/shirt/shirt3.png'
-import { IoStar } from 'react-icons/io5'
-import axiosInstance from '../../api/axiosInstance'
+import useProduct from '../../hooks/useProduct'
+import { BsStarFill } from 'react-icons/bs';
+import { BiStar, BiSolidStarHalf } from 'react-icons/bi';
 
 const TopProducts = () => {
-    const [topProducts, setTopProducts] = useState<any[]>([])
+    const { topRatedProducts } = useProduct();
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-    const ProductsData = [
-        {
-            id:1,
-            title:"Casual Wear",
-            img:Image1,
-            description:'Lorem ipsum dolor sit amet nhkdl nh consectetur. hgntnm Perferendis, sapiente temporibusgna.',
-            stars:4
-        },
-        {
-            id:2,
-            title:"Printed shirt",
-            img:Image2,
-            description:'Lorem ipsum dolor sit amet nhkdl nh consectetur. hgntnm Perferendis, sapiente temporibusgna.',
-            stars:4
-        },
-        {
-            id:3,
-            title:"Women shirt",
-            img:Image3,
-            description:'Lorem ipsum dolor sit amet nhkdl nh consectetur. hgntnm Perferendis, sapiente temporibusgna.',
-            stars:4
+    const StarRating = ( rating: number ) : any =>{
+        // rating est un nombre (ex: 3.7)
+        const stars = [];
+
+        for (let i = 1; i <= 5; i++) {
+            if (rating >= i) {
+            // étoile pleine
+            stars.push(<BsStarFill key={i} className="text-yellow-400" />);
+            } else if (rating >= i - 0.5) {
+            // demi-étoile
+            stars.push(<BiSolidStarHalf key={i} className="text-yellow-400" />);
+            } else {
+            // étoile vide
+            stars.push(<BiStar key={i} className="text-yellow-400" />);
+            }
         }
-    ]
 
-    useEffect(() => {
-        // Fetch top-rated products from the backend API
-        axiosInstance
-        .get<any[]>(`api/ratings/best_rated/`)
-        .then((response) => setTopProducts(response.data))
-        .catch((error) => console.error("Error fetching top-rated products data:", error));
-        console.log("Top Products: ", topProducts);
-    }, []);
+        return <div className="flex">{stars}</div>;
+        }
 
   return (
     <div className=""> 
@@ -48,12 +34,12 @@ const TopProducts = () => {
         <div className='text-left mb-24'>
             <p className="text-sm text-primary font-medium" data-aos='fade-up'>Top Rated Products for you</p>
             <h1 className="text-3xl font-bold dark:text-white" data-aos='fade-up'>Best Products</h1>
-            <p className="text-xs text-gray-400" data-aos='fade-up'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis, sapiente temporibus, necessitatibus.</p>
+            <p className="text-xs text-gray-400" data-aos='fade-up'>discover our top-rated products</p>
         </div>
         {/* Body section */}
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-20 md:gap-5'>
             {
-                ProductsData.map((data)=>(
+                topRatedProducts.map((data)=>(
                     <div key={data.id} data-aos = 'zoom-in'
                      className='rounded-2xl bg-white
                     dark:bg-gray-800 hover:bg-black/80
@@ -61,27 +47,25 @@ const TopProducts = () => {
                     shadow-xl duration-300 group max-w-[300px] mt-14 group'>
                         {/* Image section */}
                         <div className='h-[100px]'>
-                            <img src={data.img} alt={data.title} className='max-w-[140px] block mx-auto
+                            <img src={apiBaseUrl+data.variants[0].images.find(i => i.mainImage)?.image || "/product_fallback_img.png"} alt={data.title} className='max-w-[140px] block mx-auto
                             transform -translate-y-20 group-hover:scale-105 duration-300
                             drop-shadow-md'/>
                         </div>
                         {/* Desc section */}
                         <div className='pb-4 px-8 flex flex-col gap-[1px] items-center mt-4'>
                             <div className='flex gap-1 text-xl items-center '>
-                                <IoStar className='text-yellow-500 group-hover:text-gray-400'/>
-                                <IoStar className='text-yellow-500 group-hover:text-gray-400'/>
-                                <IoStar className='text-yellow-500 group-hover:text-gray-400'/>
-                                <IoStar className='text-yellow-500 group-hover:text-gray-400 border-yellow-500'/>
+                                {StarRating(data.avg_rating)}
                             </div>
                             <h1 className='dark:text-white font-bold text-xl'>{data.title}</h1>
                             <p className='text-sm text-gray-500
                              group-hover:text-white duration-300 
                              line-clamp-2'>
-                                {data.description}</p>
+                                {data.short_desc}</p>
                             <button className='bg-primary hover:scale-105
                                     duration-200 text-white py-1 px-4 rounded-xl mt-4
                                     group-hover:bg-white group-hover:text-primary'
-                                    >Order now
+                                    onClick={() => window.location.href=`/product/${data.id}/1`}> 
+                                    Order now
                                 </button>
                         </div>
                     </div>

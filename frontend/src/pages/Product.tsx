@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from "react-router-dom";
 import { new_price } from './Boutique';
 import { BsStarFill } from 'react-icons/bs';
+import { BiStar } from 'react-icons/bi';
 import { Link } from "react-router-dom";
 import { FaRuler } from 'react-icons/fa';
 import { GrDown, GrUp } from "react-icons/gr";
 import axiosInstance from '../api/axiosInstance';
 import { useSelector, useDispatch } from 'react-redux';
-import { BiStar } from 'react-icons/bi';
 import { formatDistanceToNow } from 'date-fns';
-import Swal from 'sweetalert2'
 import { fr } from 'date-fns/locale';
-import useProduct from '../hooks/useProduct';
 import useCart from '../hooks/useCart';
 
 // Typage RootState et User depuis votre Redux store
@@ -19,6 +17,7 @@ import type { RootState } from '../redux/store';
 import {User} from '../types/User'
 import { CommentType, ProductSize, Product as ProductType, ProductVariant, ProductVariantImage } from '../types/Product';
 import useComment from '../hooks/useComment';
+import useWishlist from '../hooks/useWishlist';
 
 const formatRelativeTime = (dateString: any) => {
   const date = new Date(dateString);
@@ -31,13 +30,6 @@ interface UserInfoForComment {
   // Ajoutez d'autres champs si nécessaire
 }
 
-
-
-interface RemoveFromWishlistResponse {
-  wishlist_item: {
-    id: number;
-  };
-}
 
 type CartItemApi = {
   id: number;
@@ -64,7 +56,7 @@ const Product = () => {
   const user: User | null = useSelector((state: RootState) => state.user.user);
   const cart = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
-  const { addToWishlist, removeFromWishlist} = useProduct(productId);
+  const { productWished, addToWishlist, setProductWishedState, removeFromWishlist} = useWishlist();
   const { addComment, comments,comment,setCommentState,setCommentsState } = useComment(productId);
   const {setMessageSize,chooseSizeMsg,addToCart} = useCart();
   const [variantId, setVariantId] = useState<number | null>(parseInt(v || '', 10) || null);
@@ -98,7 +90,6 @@ const Product = () => {
   const [product, setProduct] = useState<ProductType | null>(null);
   const [displayReviews, setDisplayReviews] = useState(false);
   const [category, setCategory] = useState<{ title: string, id: number , slug: string } | null>(null);
-  const [productWished, setProductWished] = useState(false);
 
   // Fonction pour obtenir la variante sélectionnée
   const selectedVariant = (vId: number | null): ProductVariant | undefined => {
@@ -110,7 +101,7 @@ const Product = () => {
 
   const variant = selectedVariant(variantId);
 
-  const [selectedVariantImage, setSelectedVariantImage] = useState<string | null>(null);
+     const [selectedVariantImage, setSelectedVariantImage] = useState<string | null>(null);
   const [userInfos, setUserInfos] = useState<{ [key: number]: UserInfoForComment }>({});
 
   // Initialisation du produit et de l'image de la variante
@@ -134,11 +125,11 @@ const Product = () => {
     if (user?.id && variant?.id) {
       axiosInstance.post<{ exists: boolean }>(`api/wishlist/already_exists/`, { user_id: user.id, variant_id: variant.id })
         .then(response => {
-          setProductWished(response.data.exists);
+          setProductWishedState(response.data.exists);
         })
         .catch(error => console.error("Error checking wishlist existence:", error));
     } else {
-      setProductWished(false);
+      setProductWishedState(false);
     }
   }, [user, variant]);
 
@@ -423,10 +414,10 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
                   onClick={() => {
                     if (productWished) {
                       removeFromWishlist(variantId!);
-                      setProductWished(false);
+                      setProductWishedState(false);
                     } else {
                       addToWishlist(variantId!);
-                      setProductWished(true);
+                      setProductWishedState(true);
                     }
                   }}>{productWished ? "Remove from the Wishlist" : "Add to Wishlist"}</button>
               </div>

@@ -1,9 +1,10 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import (
     ActivateAccountView,
     RegisterView,
     add_to_cart,
     already_in_wishlist,
+    get_top_rated_products,
     email_exists,
     empty_cart,
     get_cart_user,
@@ -38,6 +39,11 @@ from .views import (
 urlpatterns = [
     path("hello/", hello_world),
     path("products/", get_products, name="get_products"),
+    re_path(
+        r"^products/top-rated(?:/(?P<category>\d+))?(?:/(?P<subcategory>\d+))?(?:/(?P<limit>\d+))?/?$",
+        get_top_rated_products,
+        name="get_top_rated_products",
+    ),
     path("categories/", get_categories, name="get_categories"),
     path("products/<int:pk>/", get_product, name="get_product"),
     path(
