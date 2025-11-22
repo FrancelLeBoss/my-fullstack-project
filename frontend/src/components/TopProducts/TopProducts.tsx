@@ -39,7 +39,7 @@ const TopProducts = () => {
         {/* Body section */}
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 place-items-center gap-20 md:gap-5'>
             {
-                topRatedProducts.map((data)=>(
+                topRatedProducts.slice(0,3).map((data)=>(
                     <div key={data.id} data-aos = 'zoom-in'
                      className='rounded-2xl bg-white
                     dark:bg-gray-800 hover:bg-black/80

@@ -10,6 +10,8 @@ from .models import (
     SubCategory,
     Cart,
     User,
+    OrderItem,
+    Order,
     Wishlist,
 )
 
@@ -57,6 +59,19 @@ class RatingAdmin(admin.ModelAdmin):
     list_display = ("product", "user", "stars", "comment")
     search_fields = ("product__title", "user")
 
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "total_price", "status", "created_at")
+    search_fields = ("user__username", "id")
+    list_filter = ("status", "created_at")
+    raw_id_fields = ("user",)
+    autocomplete_fields = ("user",) 
+
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ("order", "variant", "quantity", "size", "price")
+    search_fields = ("order__id", "variant__product__title")
+    list_filter = ("order",)
+    raw_id_fields = ("order","variant")
+    autocomplete_fields = ("order", "variant")
 
 class CartForm(forms.ModelForm):
     class Meta:
@@ -125,3 +140,5 @@ admin.site.register(Rating, RatingAdmin)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(Wishlist, WishlistAdmin)
 admin.site.register(User, UserAdmin)
+admin.site.register(Order, OrderAdmin)
+admin.site.register(OrderItem, OrderItemAdmin)

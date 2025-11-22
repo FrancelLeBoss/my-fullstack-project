@@ -147,7 +147,44 @@ class ProductImage(models.Model):
     def __str__(self):
         main_image_text = "principale " if self.mainImage else ""
         return f"Image {main_image_text}de {self.product.title} ({self.color})"
+    
+class Order(models.Model):
+    """Modèle pour les commandes passées par les utilisateurs."""
 
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ("pending", "Pending"),
+            ("processing", "Processing"),
+            ("shipped", "Shipped"),
+            ("delivered", "Delivered"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="pending",
+    )
+
+    def __str__(self):
+        return f"Order #{self.id} by {self.user.username} - {self.status}"
+
+class OrderItem(models.Model):
+    """Modèle pour les articles de commande."""
+
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    size = models.ForeignKey(
+        ProductVariantSize, on_delete=models.CASCADE, null=True, blank=True
+    )  # Taille de la variante
+    order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product_variant} (Size: {self.size})"
 
 class Rating(models.Model):
     """Avis des utilisateurs avec une note et un commentaire."""

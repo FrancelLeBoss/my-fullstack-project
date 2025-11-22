@@ -9,6 +9,7 @@ import axiosInstance from "../api/axiosInstance"; // NOUVEAU : Importer votre in
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../redux/store"; // ASSUREZ-VOUS QUE CE CHEMIN EST CORRECT VERS VOTRE FICHIER STORE.TSX OU STORE.TS
 import type { User } from "../types/User";
+import useProduct from "../hooks/useProduct";
 import {
   CategoryDetails,
   Product,
@@ -38,16 +39,15 @@ export const Boutique = () => {
   const { slug } = useParams();
   const { data, isLoading, error } = useCategories();
   const categories: CategoryDetails[] = Array.isArray(data) ? data : [];
+  const { topRatedProducts } = useProduct();
 
   // if (isLoading) return <p>Chargement...</p>;
   // if (error) return <p>Erreur : {error.message}</p>;
 
   const categoryDetails = categories.find((cat) => cat.slug === slug);
-  console.log("Category details for slug ", slug, ":", categoryDetails);
 
   // Utilisation de RootState pour le typage du sélecteur
   const user: User | null = useSelector((state: RootState) => state.user.user);
-  const cart = useSelector((state: RootState) => state.cart.items); // Assurez-vous que 'cart' existe dans votre RootState
 
   const [genderClicked, setGenderClicked] = useState(false);
   const [priceClicked, setPriceClicked] = useState(false);
@@ -71,7 +71,15 @@ export const Boutique = () => {
   const [subCategoryList, setSubCategoryList] = useState<any[]>([]);
 
   useEffect(() => {
-    // On ne lance les requêtes que si categoryDetails existe et a un id
+    // Si le slug est "top-rated", utiliser les données préchargées (si `useProduct` les gère)
+    if (slug === "top-rated") {
+        if (topRatedProducts) {
+            setProductsData(topRatedProducts);
+            setSubCategoryList([]); 
+        }
+        return;
+    }
+    
     if (!categoryDetails?.id) return;
 
     axiosInstance
@@ -85,7 +93,8 @@ export const Boutique = () => {
       .catch((error) => {
         console.error("Error fetching subcategories:", error);
       });
-  }, [categoryDetails]);
+      
+  }, [categoryDetails, slug, topRatedProducts]); // Ajouter slug et topRatedProducts aux dépendances
 
   useEffect(() => {
     if (user && user.id) {
@@ -295,14 +304,15 @@ export const Boutique = () => {
       {/* Header */}
       <div className="bg-primary/40 py-3">
         <div className="text-xl text-secondary text-center font-semibold uppercase">
-          {categoryDetails?.title ? categoryDetails.title : "Loading..."}
+          {
+          slug ==="top-rated"?"Our Top Rated Products":categoryDetails?.title ? categoryDetails.title : "Loading..."}
         </div>
       </div>
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
         <div className="text-sm text-gray-600 dark:text-gray-200 font-medium capitalize">
           <Link className="hover:underline cursor-pointer" to="/">Home</Link> /{" "}
-          {categoryDetails?.title ? (
+          {slug ==="top-rated"?"Top rated":categoryDetails?.title ? (
             categoryDetails.title
           ) : (
             <span className="animate-pulse">Loading...</span>
@@ -312,9 +322,9 @@ export const Boutique = () => {
         {/* Title & Sorting */}
         <div className="flex justify-between items-center mt-3">
           <h1 className="lg:text-3xl md:text-2xl text-xl font-medium">
-            {categoryDetails?.short_desc
-              ? categoryDetails.short_desc + "(" + ProductsData?.length + ")"
-              : "Loading..."}
+            {slug === "top-rated" ? "Discover our best products (" + ProductsData?.length + ")" 
+            : (categoryDetails?.short_desc ? categoryDetails.short_desc 
+            + "(" + ProductsData?.length + ")" : "Loading...")}
           </h1>
           <div className="flex items-center gap-4 text-base md:text-lg font-normal">
             <button

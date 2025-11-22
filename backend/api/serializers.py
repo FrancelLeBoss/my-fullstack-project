@@ -4,6 +4,8 @@ from .models import (
     Product,
     ProductVariant,
     ProductVariantSize,
+    Order,
+    OrderItem,
     ProductImage,
     Category,
     SubCategory,
@@ -131,6 +133,30 @@ class ProductVariantSizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariantSize
         fields = ["id", "variant", "size"]
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    """Serializer pour les articles de commande."""
+
+    class Meta:
+        model = OrderItem
+        fields = ["id", "order", "variant", "quantity", "size", "price"]
+
+class OrderSerializer(serializers.ModelSerializer):
+    """Serializer pour les commandes."""
+
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "user",
+            "created_at",
+            "updated_at",
+            "total_price",
+            "status",
+            "items",
+        ]   
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
