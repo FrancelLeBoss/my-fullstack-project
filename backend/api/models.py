@@ -184,7 +184,7 @@ class OrderItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.quantity} x {self.product_variant} (Size: {self.size})"
+        return f"{self.quantity} x {self.variant} (Size: {self.size})"
 
 class Rating(models.Model):
     """Avis des utilisateurs avec une note et un commentaire."""
