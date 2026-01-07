@@ -1,0 +1,25 @@
+# Environment files
+.env
+*.env
+secrets.json
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+db.sqlite3
+media/
+staticfiles/
+
+# Node / React
+node_modules/
+build/
+dist/
+.eslintcache
+
+# Docker
+.docker_volumes/
+
+# OS
+.DS_Store
+Thumbs.db

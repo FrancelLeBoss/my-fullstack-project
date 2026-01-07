@@ -2,6 +2,7 @@ from django.urls import path, re_path
 from .views import (
     ActivateAccountView,
     RegisterView,
+    CreateCheckoutSessionView,
     add_to_cart,
     already_in_wishlist,
     get_top_rated_products,
@@ -33,7 +34,7 @@ from .views import (
     remove_from_wishlist,
     empty_wishlist,
     user_me,
-    best_rated
+    best_rated,
 )
 
 urlpatterns = [
@@ -72,6 +73,7 @@ urlpatterns = [
     path("login/", login, name="login"),
     path("logout/", logout, name="logout"),
     path("register/", RegisterView.as_view(), name="register"),
+    path("create-checkout-session/", CreateCheckoutSessionView.as_view(), name="create_checkout_session"),
     path(
         "activate/<uuid:email_verification_token>/",
         ActivateAccountView.as_view(),

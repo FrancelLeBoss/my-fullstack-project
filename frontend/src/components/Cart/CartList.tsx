@@ -28,6 +28,7 @@ const CartList: React.FC<Props> = ({ items, onRemove, onUpdateQuantity, imageUrl
     <div className="space-y-4">
       {items.map((item) => (
         <div key={item.id} className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm hover:shadow-md hover:bg-primary/40 duration-200">
+          <input type="checkbox" className="w-4 h-4 border-none border-gray-300 rounded"  />
           <button
             onClick={() => onNavigate?.(item.variant?.product?.id, item.variant?.id)}
             className="flex-shrink-0"

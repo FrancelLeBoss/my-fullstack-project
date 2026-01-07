@@ -26,6 +26,8 @@ services:
     # Variables d'environnement pour que le backend puisse se connecter à la base de données
     environment:
       DATABASE_URL: "postgres://postgres:francelKazakh*2022@db:5432/my_shop_db"
+    env_file:
+      - ./backend/.env
     # Dépendance sur le service 'db'. Docker s'assurera que 'db' est démarré avant de lancer 'backend'.
     depends_on:
       - db

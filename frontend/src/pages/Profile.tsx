@@ -6,7 +6,8 @@ const Profile = () => {
         {/* Header */}
         <div className="bg-primary/40 py-3">
             <div className="text-xl text-secondary text-center font-semibold uppercase">
-                {categoryDetails?.title ? categoryDetails.title : "Loading..."}
+                YOUR PROFILE
+                
             </div>
         </div>
     </div>

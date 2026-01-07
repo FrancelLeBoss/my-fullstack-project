@@ -6,10 +6,14 @@ import { RootState } from "../redux/store";
 import useCart from "../hooks/useCart";
 import CartList from "../components/Cart/CartList";
 import { CartItem } from "../types/Product";
+import axiosInstance from "../api/axiosInstance";
+import { FaStripe } from "react-icons/fa";
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const { user, isAuthenticated } = useSelector((s: RootState) => s.user);
+  const {accessToken} = useSelector((s: RootState) => s.user);
   const { items, totalPrice, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity } = useCart();
 
   useEffect(() => {
@@ -45,6 +49,48 @@ const CartPage: React.FC = () => {
     if (res.isConfirmed) {
       await removeItem(item.variant?.id ?? item.id, item.size?.id);
       Swal.fire("Removed!", "Your item has been removed from the cart.", "success");
+    }
+  };
+
+  const handleCheckout = async (items: CartItem[]) => {
+      const res = await Swal.fire({
+      title: "Checkout",
+      text: "Are you sure ? You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#fea928",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, Proceed!",
+    });
+    if (res.isConfirmed) {
+      try {
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // On utilise le token 'access' récupéré de Redux
+                    Authorization: `Bearer ${accessToken}`, 
+                },
+            };
+            const data = {
+                cartItems: items.map(item => ({
+                    variant_id: item.variant?.id, 
+                    size_id: item.size?.id,       
+                    qty: item.quantity             
+                }))
+            };
+
+            const response = await axiosInstance.post<any>(
+                `${apiBaseUrl}api/create-checkout-session/`, 
+                data, 
+                config
+            );
+            if (response.data.url) {
+                window.location.href = response.data.url;
+            }
+
+        } catch (error : any) {
+            console.error("Erreur:", error.response?.data?.error || error.message);
+        }
     }
   };
 
@@ -110,11 +156,12 @@ const CartPage: React.FC = () => {
                   Swal.fire({ title: "Please login", icon: "info", timer: 1500, showConfirmButton: false });
                   return;
                 }
-                navigate("/checkout");
+                handleCheckout(items);
               }}
-              className="w-full mt-4 bg-primary text-white py-2 rounded-lg"
+              className="w-full mt-4 bg-primary text-white py-1 rounded-lg flex items-center justify-center hover:scale-105 transition-colors"
             >
-              Checkout
+              <span>Checkout with</span>
+              <FaStripe className="ml-2 w-8 h-8 text-gray-800"/>
             </button>
           </div>
         </aside>

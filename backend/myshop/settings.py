@@ -6,6 +6,8 @@ import dj_database_url  # Import the dj_database_url module
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -234,3 +236,5 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")  # Remplacez par votre adresse e-
 EMAIL_HOST_PASSWORD = os.getenv(
     "EMAIL_HOST_PASSWORD"
 )  # Remplacez par votre mot de passe ou un mot de passe d'application
+
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')

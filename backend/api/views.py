@@ -1,18 +1,19 @@
 from datetime import timezone
 from django.utils import timezone
+import stripe
+from django.conf import settings
 from django.shortcuts import render
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import Cart, Product, ProductVariant, ProductVariantSize, Rating, Wishlist
-from .models import SubCategory
-from .models import Category
+from .models import Cart, Product, ProductVariant, ProductVariantSize, Rating, Wishlist, Order, OrderItem,SubCategory, Category
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
 from rest_framework import status
+from rest_framework.views import APIView
 import random
 from .serializers import RegisterSerializer
 from django.core.mail import send_mail
@@ -42,7 +43,88 @@ def generate_verification_code():
     """Générer un code de vérification aléatoire à 6 chiffres."""
     return str(random.randint(100000, 999999))
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
+class CreateCheckoutSessionView(APIView):
+    permission_classes = [IsAuthenticated] # L'utilisateur doit être connecté
+
+    def post(self, request):
+        try:
+            # 1. Récupérer les items du panier envoyés par React
+            # Format attendu : [{"variant_id": 1, "size_id": 2, "qty": 1}, ...]
+            cart_items = request.data.get('cartItems', [])
+            
+            if not cart_items:
+                return Response({'error': 'Panier vide'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 2. Créer la commande (Order) initialement
+            order = Order.objects.create(
+                user=request.user,
+                status='pending',
+                created_at=timezone.now(),
+                is_paid=False
+            )
+
+            line_items = []
+            final_total_price = 0
+
+            # 3. Boucler sur les items pour créer les OrderItems et préparer Stripe
+            for item in cart_items:
+                variant = ProductVariant.objects.get(id=item['variant_id'])
+                size = ProductVariantSize.objects.get(id=item['size_id'])
+                qty = int(item['qty'])
+
+                # Création de l'item de commande lié à ton modèle
+                OrderItem.objects.create(
+                    order=order,
+                    variant=variant,
+                    size=size,
+                    quantity=qty,
+                    price=variant.price # Prix capturé au moment de l'achat
+                )
+
+                # Préparation de l'objet pour Stripe
+                line_items.append({
+                    'price_data': {
+                        'currency': 'cad', # Dollars canadiens
+                        'product_data': {
+                            'name': f"{variant.product.title}",
+                            'description': f"Couleur: {variant.color} - Taille: {size.size}",
+                        },
+                        'unit_amount': int(variant.price * 100), # Stripe utilise les centimes (10.00$ = 1000)
+                    },
+                    'quantity': qty,
+                })
+                
+                final_total_price += variant.price * qty
+
+            # 4. Mettre à jour le prix total final dans la commande
+            order.total_price = final_total_price
+            order.updated_at = timezone.now()
+            order.save()
+
+            # 5. Créer la session de paiement Stripe
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=line_items,
+                mode='payment',
+                # URLs de redirection (à ajuster selon tes routes React)
+                success_url=f"{settings.FRONTEND_URL}/payment-success?order_id={order.id}",
+                cancel_url=f"{settings.FRONTEND_URL}/cart",
+                # On passe l'ID de la commande en métadonnées pour le Webhook plus tard
+                metadata={
+                    'order_id': order.id
+                }
+            )
+
+            # 6. Retourner l'URL Stripe au frontend
+            return Response({'url': checkout_session.url}, status=status.HTTP_200_OK)
+
+        except ProductVariant.DoesNotExist:
+            return Response({'error': 'Un produit est introuvable'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 # Create your views here.
 @api_view(["GET"])
 def hello_world(request):
