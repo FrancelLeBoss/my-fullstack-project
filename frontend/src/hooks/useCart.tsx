@@ -23,6 +23,7 @@ export default function useCart() {
 
   useEffect(() => {
     // sync from store when it changes (initial load or remote updates)
+    console.log("Items reçus du store :", storeItems);
     setLocalItems(storeItems || []);
   }, [storeItems]);
 
@@ -41,12 +42,11 @@ export default function useCart() {
     return localItems.reduce((sum, it) => {
       const price = Number(it.variant?.price ?? 0);
       const qty = Number(it.quantity ?? 0);
-      return sum + price * qty;
+      return sum + (it.checked ? price * qty : 0);
     }, 0);
   }, [localItems]);
 
-  const addToCart = useCallback(async (variantId: number, sizeId: number | null, quantity: number) => {
-    console.log("Adding to cart of:", { user});
+  const addToCart = useCallback(async (variantId: number, sizeId: number | null, quantity: number, checked: boolean) => {
     if (!user) {
           Swal.fire({
             icon: 'warning',
@@ -67,6 +67,7 @@ export default function useCart() {
           variant_id: variantId,
           size_id: sizeId,
           quantity: quantity,
+          checked: checked || true,
         },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
@@ -88,6 +89,11 @@ export default function useCart() {
     }
   }, [accessToken, apiBaseUrl, dispatch]);
 
+  const checkOrUncheck = useCallback(async (variantId: number, sizeId: number | null, checked: boolean) => {
+    // This is a placeholder for any API call if needed to check/uncheck items
+    // Currently, this function does not perform any action
+  }, []);
+
   const fetchCart = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -95,7 +101,7 @@ export default function useCart() {
       const res = await axiosInstance.get(`${apiBaseUrl}api/cart/`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const cartData = res.data as Array<{ id: number; variant: number; size: number | null; quantity: number }>;
+      const cartData = res.data as Array<{ id: number; variant: number; size: number | null; quantity: number; checked: boolean }>;
 
       const itemsDetailed = await Promise.all(
         cartData.map(async (it) => {
@@ -108,6 +114,7 @@ export default function useCart() {
             variant: variantRes.data,
             size: sizeRes.data,
             quantity: it.quantity,
+            checked: it.checked,
             
           } as CartItem;
         })
@@ -171,7 +178,7 @@ export default function useCart() {
   );
 
   const updateQuantity = useCallback(
-    async (variantId: number, sizeId: number | undefined, quantity: number) => {
+    async (variantId: number, sizeId: number | undefined, quantity: number, checked: boolean) => {
       // optimistic update using functional setter
       setLocalItems((cur) => {
         const snapshot = cur.map((it) => ({ ...it }));
@@ -189,14 +196,46 @@ export default function useCart() {
       try {
         await axiosInstance.post(
           `${apiBaseUrl}api/cart/update/`,
-          { variant_id: variantId, size_id: sizeId, quantity },
+          { variant_id: variantId, size_id: sizeId, quantity, checked },
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
-        dispatch({ type: "cart/updateCartItem", payload: { id: variantId, quantity } });
+        dispatch({ type: "cart/updateCartItem", payload: { id: variantId, quantity, checked } });
       } catch (err) {
         // revert on error
         setLocalItems(prevItemsRef.current);
         console.error("useCart.updateQuantity error:", err);
+      }
+    },
+    [accessToken, apiBaseUrl, dispatch]
+  );
+
+  const updateChecked = useCallback(
+    async (variantId: number, sizeId: number | undefined, checked: boolean) => {
+      // optimistic update using functional setter
+      setLocalItems((cur) => {
+        const snapshot = cur.map((it) => ({ ...it }));
+        prevItemsRef.current = snapshot;
+        return cur.map((it) => {
+          const vid = it.variant?.id ?? it.id;
+          const sid = it.size?.id;
+          if (vid === variantId && (sizeId == null || sid === sizeId)) {
+            return { ...it, checked };
+          }
+          return it;
+        });
+      });
+
+      try {
+        await axiosInstance.post(
+          `${apiBaseUrl}api/cart/update-checked/`,
+          { variant_id: variantId, size_id: sizeId, checked },
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        dispatch({ type: "cart/updateCartItemChecked", payload: { id: variantId, checked } });
+      } catch (err) {
+        // revert on error
+        setLocalItems(prevItemsRef.current);
+        console.error("useCart.updateChecked error:", err);
       }
     },
     [accessToken, apiBaseUrl, dispatch]
@@ -218,6 +257,7 @@ export default function useCart() {
     removeItem,
     updateQuantity,
     setMessageSize,
+    updateChecked,
     chooseSizeMsg,
   };
 }

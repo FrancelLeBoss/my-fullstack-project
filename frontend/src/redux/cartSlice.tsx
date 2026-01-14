@@ -52,17 +52,18 @@ const cartSlice = createSlice({
     // Mettre à jour la quantité d'un produit
     updateCartItem: (
       state,
-      action: PayloadAction<{ id: number; quantity: number }>
+      action: PayloadAction<{ id: number; quantity: number;checked?:boolean }>
     ) => {
       // Ajoutez PayloadAction type
-      const { id, quantity } = action.payload;
+      const { id, quantity,checked } = action.payload;
       const existingItem = state.items.find((item) => item.id === id);
 
       if (existingItem) {
         existingItem.quantity = quantity;
+        existingItem.checked = checked;
       }
       state.totalAmount = state.items.reduce(
-        (total, item) => total + item.quantity,
+        (total, item) => total + (item.checked ? item.quantity : 0),
         0
       );
 
@@ -72,7 +73,36 @@ const cartSlice = createSlice({
               state.items
                 .reduce((total, item) => {
                   const price = item.variant?.price || 0;
-                  return total + price * item.quantity;
+                  return total + (item.checked ? price * item.quantity : 0);
+                }, 0)
+                .toFixed(2)
+            )
+          : 0;
+    },
+
+    updateCartItemChecked: (
+      state,
+      action: PayloadAction<{ id: number; checked: boolean }>
+    ) => {
+      // Ajoutez PayloadAction type
+      const { id, checked } = action.payload;
+      const existingItem = state.items.find((item) => item.id === id);
+
+      if (existingItem) {
+        existingItem.checked = checked;
+      }
+      state.totalAmount = state.items.reduce(
+        (total, item) => total + (item.checked ? item.quantity : 0),
+        0
+      );
+
+      state.totalPrice =
+        state.items.length > 0
+          ? Number(
+              state.items
+                .reduce((total, item) => {
+                  const price = item.variant?.price || 0;
+                  return total + (item.checked ? price * item.quantity : 0);
                 }, 0)
                 .toFixed(2)
             )
@@ -86,7 +116,7 @@ const cartSlice = createSlice({
       state.items = state.items.filter((item) => item.id !== id);
 
       state.totalAmount = state.items.reduce(
-        (total, item) => total + item.quantity,
+        (total, item) => total + (item.checked ? item.quantity : 0),
         0
       );
 
@@ -96,7 +126,8 @@ const cartSlice = createSlice({
               state.items
                 .reduce((total, item) => {
                   const price = item.variant?.price || 0;
-                  return total + price * item.quantity;
+                  return total + (item.checked ? price * item.quantity : 0);
+                  // return total + price * item.quantity;
                 }, 0)
                 .toFixed(2)
             )
@@ -115,7 +146,7 @@ const cartSlice = createSlice({
       // Ajoutez PayloadAction type
       state.items = action.payload; // Remplace tous les articles du panier
       state.totalAmount = state.items.reduce(
-        (total, item) => total + item.quantity,
+        (total, item) => total + (item.checked ? item.quantity : 0),
         0
       );
 
@@ -125,7 +156,7 @@ const cartSlice = createSlice({
               state.items
                 .reduce((total, item) => {
                   const price = item.variant?.price || 0;
-                  return total + price * item.quantity;
+                  return total + (item.checked ? price * item.quantity : 0);
                 }, 0)
                 .toFixed(2)
             )

@@ -14,7 +14,7 @@ const CartPage: React.FC = () => {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const { user, isAuthenticated } = useSelector((s: RootState) => s.user);
   const {accessToken} = useSelector((s: RootState) => s.user);
-  const { items, totalPrice, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity } = useCart();
+  const { items, totalPrice, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity, updateChecked } = useCart();
 
   useEffect(() => {
     if (isAuthenticated) fetchCart();
@@ -94,10 +94,16 @@ const CartPage: React.FC = () => {
     }
   };
 
-  const handleUpdateQty = (item: CartItem, qty: number) => {
+  const handleUpdateQty = (item: CartItem, qty: number, checked: boolean) => {
     const variantId = item.variant?.id ?? item.id;
     const sizeId = item.size?.id;
-    updateQuantity(variantId, sizeId, qty);
+    updateQuantity(variantId, sizeId, qty, checked);
+  };
+
+  const handleUpdateChecked = (item: CartItem, checked: boolean) => {
+    const variantId = item.variant?.id ?? item.id;
+    const sizeId = item.size?.id;
+    updateChecked(variantId, sizeId, checked);
   };
 
   const handleNavigate = (productId?: number, variantId?: number) => {
@@ -125,6 +131,7 @@ const CartPage: React.FC = () => {
               items={items}
               onRemove={handleRemove}
               onUpdateQuantity={handleUpdateQty}
+              onUpdateChecked={handleUpdateChecked}
               imageUrl={imageUrl}
               onNavigate={handleNavigate}
             />

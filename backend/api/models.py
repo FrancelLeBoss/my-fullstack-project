@@ -213,8 +213,9 @@ class Cart(models.Model):
     size = models.ForeignKey(
         ProductVariantSize, on_delete=models.CASCADE, null=True, blank=True
     )  # Taille de la variante
-    created_at = models.DateTimeField(auto_now_add=True)  # Date d'ajout au panier
-    updated_at = models.DateTimeField(auto_now=True)  # Date de mise à jour
+    checked = models.BooleanField(default=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True) 
 
     class Meta:
         unique_together = (

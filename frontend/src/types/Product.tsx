@@ -96,6 +96,7 @@ export interface CartItem {
     [key: string]: any;
   };
   size?: ProductSize;
+  checked?: boolean;
   [key: string]: any;
   
 }

@@ -829,6 +829,7 @@ def add_to_cart(request):
     user_id = request.data.get("user_id")
     variant_id = request.data.get("variant_id")
     quantity = request.data.get("quantity", 1)
+    checked = request.data.get("checked", True)
     size_id = request.data.get("size_id") if request.data.get("size_id") else None
     created_at = timezone.now()
     updated_at = timezone.now()
@@ -862,6 +863,7 @@ def add_to_cart(request):
             # Si des éléments existent, mettez à jour le premier
             cart_item = cart_items.first()
             cart_item.quantity += quantity
+            cart_item.checked = checked
             cart_item.updated_at = updated_at
             cart_item.save()
         else:
@@ -870,6 +872,7 @@ def add_to_cart(request):
                 user=user,
                 variant=variant,
                 quantity=quantity,
+                checked=checked,
                 size=size if size_id else None,
                 created_at=created_at,
                 updated_at=updated_at,
@@ -884,6 +887,7 @@ def add_to_cart(request):
                 "user": UserSerializer(user).data,
                 "variant_id": variant_id,
                 "quantity": quantity,
+                "checked": checked,
                 "size": ProductVariantSizeSerializer(size).data if size_id else None,
                 "variant": ProductVariantSerializer(
                     variant
@@ -904,6 +908,70 @@ def empty_cart(request):
     Cart.objects.filter(user=user).delete()
     return Response({"message": "Cart emptied successfully!"}, status=HTTP_200_OK)
 
+@permission_classes([IsAuthenticated])
+@api_view(["POST"])
+def up_cart_checked(request):  
+    """Coche ou décoche un élément du panier."""
+    user = request.user  # Utilisateur authentifié
+    variant_id = request.data.get("variant_id")
+    size_id = request.data.get("size_id") if request.data.get("size_id") else None
+    checked = request.data.get("checked", True)
+    updated_at = timezone.now()
+    # Vérifier que les champs sont remplis
+    if not variant_id:
+        return Response(
+            {"error": "variant ID is required."},
+            status=HTTP_400_BAD_REQUEST,
+        )
+    # Vérifier que la variante existe
+    try:
+        variant = ProductVariant.objects.get(pk=variant_id)
+    except ProductVariant.DoesNotExist:
+        return Response({"error": "Variant not found."}, status=HTTP_400_BAD_REQUEST)
+    size = None
+    if size_id:
+        try:
+            size = ProductVariantSize.objects.get(pk=size_id)
+        except ProductVariantSize.DoesNotExist:
+            return Response({"error": "Size not found."}, status=HTTP_400_BAD_REQUEST)
+    # Vérifier si l’élément est déjà dans le panier
+    try:
+        cart_items = Cart.objects.filter(user=user, variant=variant)
+        # Si la taille est spécifiée, vérifiez également si elle correspond
+        if size_id:
+            cart_items = cart_items.filter(size=size)
+        if cart_items.exists():
+            # Si des éléments existent, mettez à jour le premier
+            cart_item = cart_items.first()
+            cart_item.checked = checked
+            cart_item.updated_at = updated_at
+            cart_item.save()
+            return Response(
+                {
+                    "message": "Cart item checked/unchecked successfully!",
+                    "cart_item": {
+                        "user_id": user.id,
+                        "user": UserSerializer(user).data,
+                        "variant_id": variant_id,
+                        "size": (
+                            ProductVariantSizeSerializer(size).data if size_id else None
+                        ),
+                        "size_id": size_id,
+                        "variant": ProductVariantSerializer(variant).data,
+                        "quantity": cart_item.quantity,
+                        "updated_at": updated_at,
+                        "checked": checked
+                    },
+                },
+                status=HTTP_200_OK,
+            )
+        else:
+            # Si l’élément n’existe pas, retournez une erreur
+            return Response(
+                {"error": "Cart item not found."}, status=HTTP_400_BAD_REQUEST
+            )
+    except Exception as e:
+        return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST) 
 
 @permission_classes([IsAuthenticated])
 @api_view(["POST"])
@@ -913,6 +981,7 @@ def update_cart(request):
     variant_id = request.data.get("variant_id")
     size_id = request.data.get("size_id") if request.data.get("size_id") else None
     quantity = request.data.get("quantity")
+    checked = request.data.get("checked", True)
     updated_at = timezone.now()
     # Vérifier que les champs sont remplis
     if not variant_id or quantity is None:
@@ -957,6 +1026,7 @@ def update_cart(request):
                         "variant": ProductVariantSerializer(variant).data,
                         "quantity": quantity,
                         "updated_at": updated_at,
+                        "checked": checked
                     },
                 },
                 status=HTTP_200_OK,

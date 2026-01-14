@@ -98,8 +98,8 @@ class CartForm(forms.ModelForm):
 
 class CartAdmin(admin.ModelAdmin):
     form = CartForm
-    list_display = ("variant", "user", "quantity", "size")
-    search_fields = ("variant__product__title", "user__username")
+    list_display = ("variant", "user", "quantity", "size", "checked")
+    search_fields = ("variant__product__title", "user__username", "checked")
     list_filter = ("user",)
     raw_id_fields = (
         "variant",
