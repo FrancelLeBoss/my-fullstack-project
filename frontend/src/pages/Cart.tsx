@@ -67,12 +67,11 @@ const CartPage: React.FC = () => {
             const config = {
                 headers: {
                     'Content-Type': 'application/json',
-                    // On utilise le token 'access' récupéré de Redux
                     Authorization: `Bearer ${accessToken}`, 
                 },
             };
             const data = {
-                cartItems: items.map(item => ({
+                cartItems: items.filter(item => item.checked).map(item => ({
                     variant_id: item.variant?.id, 
                     size_id: item.size?.id,       
                     qty: item.quantity             
@@ -139,12 +138,12 @@ const CartPage: React.FC = () => {
         </main>
 
         <aside className="md:col-span-1 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Summary</h2>
+          <h2 className="text-lg  mb-4">Summary</h2>
 
           <div className="space-y-3">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span className="font-semibold">{(totalPrice ?? 0).toFixed(2)} $</span>
+              <span className="">{(totalPrice ?? 0).toFixed(2)} $</span>
             </div>
 
             <div className="flex justify-between">
@@ -152,7 +151,7 @@ const CartPage: React.FC = () => {
               <span>—</span>
             </div>
 
-            <div className="flex justify-between text-lg font-bold border-t pt-3">
+            <div className="flex justify-between text-lg border-t pt-3 delay-300">
               <span>Total</span>
               <span>{(totalPrice ?? 0).toFixed(2)} $</span>
             </div>

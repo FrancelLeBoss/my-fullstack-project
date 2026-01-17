@@ -109,8 +109,8 @@ class CreateCheckoutSessionView(APIView):
                 line_items=line_items,
                 mode='payment',
                 # URLs de redirection (à ajuster selon tes routes React)
-                success_url=f"{settings.FRONTEND_URL}/payment-success?order_id={order.id}",
-                cancel_url=f"{settings.FRONTEND_URL}/cart",
+                success_url=f"{settings.FRONTEND_URL}payment-success/{order.id}",
+                cancel_url=f"{settings.FRONTEND_URL}cart",
                 # On passe l'ID de la commande en métadonnées pour le Webhook plus tard
                 metadata={
                     'order_id': order.id
@@ -118,6 +118,10 @@ class CreateCheckoutSessionView(APIView):
             )
 
             # 6. Retourner l'URL Stripe au frontend
+            order.is_paid = True
+            order.status = 'completed'
+            order.updated_at = timezone.now()
+            order.save()
             return Response({'url': checkout_session.url}, status=status.HTTP_200_OK)
 
         except ProductVariant.DoesNotExist:

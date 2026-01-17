@@ -404,7 +404,7 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
                                  text-gray-50 py-4 px-4 w-full font-semibold text-lg' onClick={() => {
                     setMessageSize("Please select a size before adding to cart.");
                     if (sizeId) {
-                      addToCart(variantId!, sizeId, 1);
+                      addToCart(variantId!, sizeId, 1,true);
                     }
                   }}>Add to Cart</button>
                 <button title={productWished ? "Remove from the wishlist"

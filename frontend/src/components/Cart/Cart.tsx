@@ -21,7 +21,7 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
   const { user, isAuthenticated, accessToken } = useSelector(
     (state: RootState) => state.user
   );
-  const { items, totalPrice, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity } = useCart();
+  const { items, totalPrice, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity, updateChecked } = useCart();
 
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -95,12 +95,19 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
     }
   };
 
-  const handleUpdateQuantity = async (item: CartItem, qty: number) => {
+  const handleUpdateQuantity = async (item: CartItem, qty: number, checked: boolean) => {
     const variantId = item.variant?.id ?? item.id;
     const sizeId = item.size?.id;
-    await updateQuantity(variantId, sizeId, qty);
+    await updateQuantity(variantId, sizeId, qty, checked);
     // ne pas forcer fetchCart(), hook fait l'optimistic update
   };
+
+    const handleUpdateChecked = (item: CartItem, checked: boolean) => {
+      const variantId = item.variant?.id ?? item.id;
+      const sizeId = item.size?.id;
+      updateChecked(variantId, sizeId, checked);
+    };
+  
 
   const handleNavigate = (productId?: number, variantId?: number) => {
     if (!productId) return;
@@ -133,9 +140,10 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
                       <CartList
                         items={items}
                         onRemove={(item) => handleRemoveFromCart(item)}
-                        onUpdateQuantity={(item, qty) => handleUpdateQuantity(item, qty)}
+                        onUpdateQuantity={(item, qty, checked) => handleUpdateQuantity(item, qty, checked)}
                         imageUrl={imageUrl}
                         onNavigate={(productId, variantId) => handleNavigate(productId, variantId)}
+                        onUpdateChecked={handleUpdateChecked}
                       />
                     )}
                   </div>

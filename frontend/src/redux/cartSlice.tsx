@@ -1,183 +1,131 @@
 // src/redux/cartSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CartItem, ProductSize } from "../types/Product";
+import { CartItem } from "../types/Product";
 
 interface CartState {
   items: CartItem[];
-  totalAmount: number; // Montant total du panier (probablement le nombre d'articles uniques ou la somme des quantités)
-  totalPrice?: number; // Prix total du panier
+  totalAmount: number;
+  totalPrice: number;
+  loading: boolean;
+  error: string | null;
 }
 
 const initialState: CartState = {
-  items: [], // Liste des articles dans le panier
-  totalAmount: 0, // Initialisation
-  totalPrice: 0, // Initialisation
+  items: [],
+  totalAmount: 0,
+  totalPrice: 0,
+  loading: false,
+  error: null,
+};
+
+/**
+ * Elle recalcule les totaux dès qu'un changement survient dans 'items'.
+ */
+const recalculateTotals = (state: CartState) => {
+  // Calcul du nombre d'articles (quantité totale des items cochés)
+  state.totalAmount = state.items.reduce(
+    (total, item) => total + (item.checked !== false ? item.quantity : 0),
+    0
+  );
+
+  // Calcul du prix total (uniquement pour les items cochés)
+  const rawPrice = state.items.reduce((total, item) => {
+    const price = item.variant?.price || 0;
+    // Si checked est undefined (ex: chargement initial), on considère true par défaut
+    const isSelected = item.checked !== false; 
+    return total + (isSelected ? price * item.quantity : 0);
+  }, 0);
+
+  state.totalPrice = Number(rawPrice.toFixed(2));
 };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    // Ajouter un produit au panier
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+
+    // --- ACTIONS DE MODIFICATION ---
     addToCart: (state, action: PayloadAction<CartItem>) => {
-      // Ajoutez PayloadAction type pour une meilleure typage
       const product = action.payload;
       const existingItem = state.items.find((item) => item.id === product.id);
 
       if (existingItem) {
         existingItem.quantity += product.quantity;
       } else {
-        state.items.push(product);
+        // On s'assure que checked est true par défaut à l'ajout
+        state.items.push({ ...product, checked: product.checked ?? true });
       }
-      // Mettez à jour totalAmount pour refléter le nombre total d'articles ou de quantités
-      state.totalAmount = state.items.reduce(
-        (total, item) => total + item.quantity,
-        0
-      );
-
-      // Met à jour le prix total avec 2 chiffres après la virgule
-      state.totalPrice =
-        state.items.length > 0
-          ? Number(
-              state.items
-                .reduce((total, item) => {
-                  const price = item.variant?.price || 0;
-                  return total + price * item.quantity;
-                }, 0)
-                .toFixed(2)
-            )
-          : 0;
+      recalculateTotals(state);
     },
 
-    // Mettre à jour la quantité d'un produit
     updateCartItem: (
       state,
-      action: PayloadAction<{ id: number; quantity: number;checked?:boolean }>
+      action: PayloadAction<{ id: number; quantity: number; checked?: boolean }>
     ) => {
-      // Ajoutez PayloadAction type
-      const { id, quantity,checked } = action.payload;
+      const { id, quantity, checked } = action.payload;
       const existingItem = state.items.find((item) => item.id === id);
-
       if (existingItem) {
         existingItem.quantity = quantity;
-        existingItem.checked = checked;
+        if (checked !== undefined) existingItem.checked = checked;
       }
-      state.totalAmount = state.items.reduce(
-        (total, item) => total + (item.checked ? item.quantity : 0),
-        0
-      );
-
-      state.totalPrice =
-        state.items.length > 0
-          ? Number(
-              state.items
-                .reduce((total, item) => {
-                  const price = item.variant?.price || 0;
-                  return total + (item.checked ? price * item.quantity : 0);
-                }, 0)
-                .toFixed(2)
-            )
-          : 0;
+      recalculateTotals(state);
     },
 
     updateCartItemChecked: (
       state,
       action: PayloadAction<{ id: number; checked: boolean }>
     ) => {
-      // Ajoutez PayloadAction type
       const { id, checked } = action.payload;
       const existingItem = state.items.find((item) => item.id === id);
-
       if (existingItem) {
         existingItem.checked = checked;
       }
-      state.totalAmount = state.items.reduce(
-        (total, item) => total + (item.checked ? item.quantity : 0),
-        0
-      );
-
-      state.totalPrice =
-        state.items.length > 0
-          ? Number(
-              state.items
-                .reduce((total, item) => {
-                  const price = item.variant?.price || 0;
-                  return total + (item.checked ? price * item.quantity : 0);
-                }, 0)
-                .toFixed(2)
-            )
-          : 0;
+      recalculateTotals(state);
     },
 
-    // Supprimer un produit du panier
     removeFromCart: (state, action: PayloadAction<number>) => {
-      // Ajoutez PayloadAction type
-      const id = action.payload;
-      state.items = state.items.filter((item) => item.id !== id);
-
-      state.totalAmount = state.items.reduce(
-        (total, item) => total + (item.checked ? item.quantity : 0),
-        0
-      );
-
-      state.totalPrice =
-        state.items.length > 0
-          ? Number(
-              state.items
-                .reduce((total, item) => {
-                  const price = item.variant?.price || 0;
-                  return total + (item.checked ? price * item.quantity : 0);
-                  // return total + price * item.quantity;
-                }, 0)
-                .toFixed(2)
-            )
-          : 0;
+      state.items = state.items.filter((item) => item.id !== action.payload);
+      recalculateTotals(state);
     },
 
-    // Vider le panier (utilisé pour une action spécifique, pas la déconnexion)
+    // --- ACTIONS DE SYNCHRONISATION ET NETTOYAGE ---
+    updateCart: (state, action: PayloadAction<CartItem[]>) => {
+      state.items = action.payload;
+      state.loading = false;
+      recalculateTotals(state);
+    },
+
     clearCart: (state) => {
       state.items = [];
       state.totalAmount = 0;
       state.totalPrice = 0;
     },
 
-    // Mettre à jour le panier (souvent après une récupération depuis l'API)
-    updateCart: (state, action: PayloadAction<CartItem[]>) => {
-      // Ajoutez PayloadAction type
-      state.items = action.payload; // Remplace tous les articles du panier
-      state.totalAmount = state.items.reduce(
-        (total, item) => total + (item.checked ? item.quantity : 0),
-        0
-      );
-
-      state.totalPrice =
-        state.items.length > 0
-          ? Number(
-              state.items
-                .reduce((total, item) => {
-                  const price = item.variant?.price || 0;
-                  return total + (item.checked ? price * item.quantity : 0);
-                }, 0)
-                .toFixed(2)
-            )
-          : 0;
-    },
-    // NOUVEAU: Réinitialiser l'état du panier à l'état initial
+    // Réinitialise tout le state (Utile lors de la déconnexion)
     reset: (state) => {
-      // Renommé 'resetCart' en 'reset' pour être plus générique
       state.items = initialState.items;
       state.totalAmount = initialState.totalAmount;
       state.totalPrice = initialState.totalPrice;
+      state.loading = initialState.loading;
+      state.error = initialState.error;
     },
   },
 });
 
+
+
 export const {
   addToCart,
   updateCartItem,
+  updateCartItemChecked,
   removeFromCart,
   clearCart,
   updateCart,
-  reset,
-} = cartSlice.actions; // Exportez la nouvelle action
+  setLoading,
+  reset, // Réintégré ici
+} = cartSlice.actions;
+
 export default cartSlice.reducer;
