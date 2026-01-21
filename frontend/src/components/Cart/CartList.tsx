@@ -88,7 +88,7 @@ const totalPrice = useMemo(() => {
               <input
                 type="number"
                 min={1}
-                max={item.variant?.stock ?? 9999}
+                max={item.variant?.stock ?? 99}
                 value={item.quantity}
                 onChange={(e) => {
                   const v = Number(e.target.value) || 1;

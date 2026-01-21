@@ -14,7 +14,15 @@ const CartPage: React.FC = () => {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const { user, isAuthenticated } = useSelector((s: RootState) => s.user);
   const {accessToken} = useSelector((s: RootState) => s.user);
-  const { items, totalPrice, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity, updateChecked } = useCart();
+  const { items, totalPrice, grandTotal, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity, updateChecked } = useCart();
+  const [shippingCost, setShippingCost] = React.useState<number>(0);
+  const [taxes, setTaxes] = React.useState<number>(totalPrice * 0.15);
+
+  useEffect(() => {
+    setShippingCost(Number(totalPrice.toFixed(2) )> Number(50) ||  Number(totalPrice.toFixed(2) ) == 0? 0 : 10);
+    setTaxes(Number((totalPrice * 0.15).toFixed(2)));
+  }, [totalPrice]);
+
 
   useEffect(() => {
     if (isAuthenticated) fetchCart();
@@ -84,7 +92,8 @@ const CartPage: React.FC = () => {
                 config
             );
             if (response.data.url) {
-                window.location.href = response.data.url;
+              console.log(JSON.stringify(response.data.checkout_session));
+              window.location.href = response.data.url;
             }
 
         } catch (error : any) {
@@ -148,12 +157,15 @@ const CartPage: React.FC = () => {
 
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span>—</span>
+              <span>{shippingCost} $</span>
             </div>
-
+            <div className="flex justify-between">
+              <span>Taxes (15%)</span>
+              <span>{taxes} $</span>
+            </div>
             <div className="flex justify-between text-lg border-t pt-3 delay-300">
               <span>Total</span>
-              <span>{(totalPrice ?? 0).toFixed(2)} $</span>
+              <span>{(grandTotal ?? 0).toFixed(2)} $</span>
             </div>
 
             <button

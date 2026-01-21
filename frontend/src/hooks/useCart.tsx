@@ -23,8 +23,6 @@ export default function useCart() {
 
   useEffect(() => {
   if (storeItems && storeItems.length > 0) {
-    console.log("Données brutes du premier item :", storeItems[0]); // Regarde si 'checked' est là !
-    
     const initializedItems = storeItems.map(item => ({
       ...item,
       // SECURITÉ: Si 'checked' est absent, on force 'true'
@@ -55,6 +53,10 @@ export default function useCart() {
       return sum + (it.checked ? price * qty : 0);
     }, 0);
   }, [localItems,localItems.length]);
+
+  const grandTotal = useMemo(() => {
+    return localTotal + (localTotal > 50 || localTotal == 0 ? 0 : 10) + (localTotal * 0.15);
+  }, [localTotal]);
 
   const addToCart = useCallback(async (variantId: number, sizeId: number | null, quantity: number, checked: boolean) => {
     if (!user) {
@@ -258,6 +260,7 @@ export default function useCart() {
   return {
     items: localItems,
     totalPrice: localTotal,
+    grandTotal,
     loading,
     error,
     imageUrl,

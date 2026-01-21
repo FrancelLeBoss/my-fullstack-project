@@ -1,5 +1,6 @@
 from datetime import timezone
 from django.utils import timezone
+from decimal import Decimal
 import stripe
 from django.conf import settings
 from django.shortcuts import render
@@ -99,7 +100,10 @@ class CreateCheckoutSessionView(APIView):
                 final_total_price += variant.price * qty
 
             # 4. Mettre à jour le prix total final dans la commande
-            order.total_price = final_total_price
+            taxe_rate = Decimal('0.15')
+            frais_port = Decimal('10') if final_total_price < 50 and final_total_price > 0 else Decimal('0')
+
+            order.total_price = (final_total_price * taxe_rate) + frais_port + final_total_price
             order.updated_at = timezone.now()
             order.save()
 
@@ -119,10 +123,11 @@ class CreateCheckoutSessionView(APIView):
 
             # 6. Retourner l'URL Stripe au frontend
             order.is_paid = True
-            order.status = 'completed'
+            order.stripe_payment_intent_id = checkout_session.id
+            order.status = 'processing'
             order.updated_at = timezone.now()
             order.save()
-            return Response({'url': checkout_session.url}, status=status.HTTP_200_OK)
+            return Response({'url': checkout_session.url, 'checkout_session': checkout_session}, status=status.HTTP_200_OK)
 
         except ProductVariant.DoesNotExist:
             return Response({'error': 'Un produit est introuvable'}, status=status.HTTP_404_NOT_FOUND)
