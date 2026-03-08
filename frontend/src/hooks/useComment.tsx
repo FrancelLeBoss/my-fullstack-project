@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import type { CommentType } from "../types/Product";
 import type { RootState } from "../redux/store";
-export default function useComment(productId?: string | number | null) {
+export default function useComment(productId?: string | number | null, userId?: number) {
 
     const user = useSelector((s: RootState) => s.user.user);
     const [comments, setComments] = useState<CommentType[]>([]);

@@ -1,139 +1,88 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
 import useCart from "../hooks/useCart";
+import useCheckout from "../hooks/useCheckout"; 
 import CartList from "../components/Cart/CartList";
 import { CartItem } from "../types/Product";
-import axiosInstance from "../api/axiosInstance";
 import { FaStripe } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-  const { user, isAuthenticated } = useSelector((s: RootState) => s.user);
-  const {accessToken} = useSelector((s: RootState) => s.user);
-  const { items, totalPrice, grandTotal, loading, imageUrl, fetchCart, clearCart, removeItem, updateQuantity, updateChecked } = useCart();
-  const [shippingCost, setShippingCost] = React.useState<number>(0);
-  const [taxes, setTaxes] = React.useState<number>(totalPrice * 0.15);
+  const { isAuthenticated } = useSelector((s: RootState) => s.user);
+  
+  // On récupère tout depuis useCart
+  const { 
+    items, totalPrice, grandTotal, loading, imageUrl, 
+    fetchCart, clearCart, removeItem, updateQuantity, 
+    updateChecked, calculateShipping, calculateTaxes 
+  } = useCart();
 
-  useEffect(() => {
-    setShippingCost(Number(totalPrice.toFixed(2) )> Number(50) ||  Number(totalPrice.toFixed(2) ) == 0? 0 : 10);
-    setTaxes(Number((totalPrice * 0.15).toFixed(2)));
-  }, [totalPrice]);
+  // On récupère la logique de paiement
+  const { handleCheckout } = useCheckout();
 
-
+  // Chargement initial
   useEffect(() => {
     if (isAuthenticated) fetchCart();
   }, [isAuthenticated, fetchCart]);
 
+
   const handleClear = async () => {
     const res = await Swal.fire({
       title: "Clear the cart",
-      text: "Are you sure ? You won't be able to revert this!",
+      text: "Are you sure? You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#fea928",
-      cancelButtonColor: "#d33",
       confirmButtonText: "Yes, clear it!",
     });
     if (res.isConfirmed) {
       await clearCart();
-      Swal.fire({ title: "Cleared!", text: "Your cart has been emptied.", icon: "success", timer: 1500, showConfirmButton: false });
+      Swal.fire({ title: "Cleared!", icon: "success", timer: 1500, showConfirmButton: false });
     }
   };
 
   const handleRemove = async (item: CartItem) => {
     const res = await Swal.fire({
-      title: "Remove from cart",
-      text: "Are you sure ? You won't be able to revert this!",
+      title: "Remove item",
+      text: "Remove this item from your cart?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#fea928",
-      cancelButtonColor: "#d33",
       confirmButtonText: "Yes, remove it!",
     });
     if (res.isConfirmed) {
       await removeItem(item.variant?.id ?? item.id, item.size?.id);
-      Swal.fire("Removed!", "Your item has been removed from the cart.", "success");
-    }
-  };
-
-  const handleCheckout = async (items: CartItem[]) => {
-      const res = await Swal.fire({
-      title: "Checkout",
-      text: "Are you sure ? You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#fea928",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Proceed!",
-    });
-    if (res.isConfirmed) {
-      try {
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${accessToken}`, 
-                },
-            };
-            const data = {
-                cartItems: items.filter(item => item.checked).map(item => ({
-                    variant_id: item.variant?.id, 
-                    size_id: item.size?.id,       
-                    qty: item.quantity             
-                }))
-            };
-
-            const response = await axiosInstance.post<any>(
-                `${apiBaseUrl}api/create-checkout-session/`, 
-                data, 
-                config
-            );
-            if (response.data.url) {
-              console.log(JSON.stringify(response.data.checkout_session));
-              window.location.href = response.data.url;
-            }
-
-        } catch (error : any) {
-            console.error("Erreur:", error.response?.data?.error || error.message);
-        }
     }
   };
 
   const handleUpdateQty = (item: CartItem, qty: number, checked: boolean) => {
-    const variantId = item.variant?.id ?? item.id;
-    const sizeId = item.size?.id;
-    updateQuantity(variantId, sizeId, qty, checked);
+    updateQuantity(item.variant?.id ?? item.id, item.size?.id, qty, checked);
   };
 
   const handleUpdateChecked = (item: CartItem, checked: boolean) => {
-    const variantId = item.variant?.id ?? item.id;
-    const sizeId = item.size?.id;
-    updateChecked(variantId, sizeId, checked);
-  };
-
-  const handleNavigate = (productId?: number, variantId?: number) => {
-    if (!productId) return;
-    navigate(`/product/${productId}/${variantId ?? ""}`);
+    updateChecked(item.variant?.id ?? item.id, item.size?.id, checked);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 py-8">
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* SECTION GAUCHE : LISTE DES PRODUITS */}
         <main className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-semibold text-primary">Your Cart</h1>
-            <div className="flex items-center gap-3">
-              <button onClick={handleClear} className="text-sm text-red-500 hover:underline">
-                Clear
-              </button>
-            </div>
+            <button onClick={handleClear} className="text-sm text-red-500 hover:underline">
+              Clear Cart
+            </button>
           </div>
 
           {loading ? (
-            <div className="text-center py-8">Loading...</div>
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
           ) : (
             <CartList
               items={items}
@@ -141,48 +90,49 @@ const CartPage: React.FC = () => {
               onUpdateQuantity={handleUpdateQty}
               onUpdateChecked={handleUpdateChecked}
               imageUrl={imageUrl}
-              onNavigate={handleNavigate}
+              onNavigate={(p, v) => navigate(`/product/${p}/${v ?? ""}`)}
             />
           )}
         </main>
 
-        <aside className="md:col-span-1 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg  mb-4">Summary</h2>
+        {/* SECTION DROITE : RÉSUMÉ DES COÛTS */}
+        <aside className="md:col-span-1 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm h-fit sticky top-8">
+          <h2 className="text-lg font-medium mb-4">Summary</h2>
 
-          <div className="space-y-3">
+          <div className="space-y-3 text-gray-600 dark:text-gray-300">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span className="">{(totalPrice ?? 0).toFixed(2)} $</span>
+              <span>{totalPrice.toFixed(2)} $</span>
             </div>
 
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span>{shippingCost} $</span>
+              <span className={calculateShipping(totalPrice) === 0 ? "text-green-500 font-medium" : ""}>
+                {calculateShipping(totalPrice) === 0 ? "Free" : `${calculateShipping(totalPrice)} $`}
+              </span>
             </div>
+
             <div className="flex justify-between">
-              <span>Taxes (15%)</span>
-              <span>{taxes} $</span>
+              <span>Taxes (provincial and federal)</span>
+              <span>{calculateTaxes(totalPrice)} $</span>
             </div>
-            <div className="flex justify-between text-lg border-t pt-3 delay-300">
+
+            <div className="flex justify-between text-xl font-bold border-t pt-4 text-gray-900 dark:text-white">
               <span>Total</span>
-              <span>{(grandTotal ?? 0).toFixed(2)} $</span>
+              <span>{grandTotal.toFixed(2)} $</span>
             </div>
 
             <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  Swal.fire({ title: "Please login", icon: "info", timer: 1500, showConfirmButton: false });
-                  return;
-                }
-                handleCheckout(items);
-              }}
-              className="w-full mt-4 bg-primary text-white py-1 rounded-lg flex items-center justify-center hover:scale-105 transition-colors"
+              onClick={handleCheckout}
+              disabled={loading || !items.some(item => item.checked)}
+              className="w-full mt-6 bg-primary text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
             >
-              <span>Checkout with</span>
-              <FaStripe className="ml-2 w-8 h-8 text-gray-800"/>
+              <span>Pay with</span>
+              <FaStripe className="text-3xl" />
             </button>
           </div>
         </aside>
+
       </div>
     </div>
   );

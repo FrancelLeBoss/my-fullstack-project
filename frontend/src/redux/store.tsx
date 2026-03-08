@@ -1,13 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './userSlice';
 import cartReducer from './cartSlice';
-import WishlistSlice from './WishlistSlice'; // Importation de la liste de souhaits
+import WishlistReducer from './WishlistSlice'; 
+import orderReducer from './orderSlice'; 
 
 export const store = configureStore({
   reducer: {
     user: userReducer,
     cart: cartReducer,
-    wishlist: WishlistSlice, // Ajout de la liste de souhaits
+    wishlist: WishlistReducer, // Ajout de la liste de souhaits
+    order: orderReducer, // Ajout du reducer de commandes
   },
 });
 

@@ -28,6 +28,7 @@ from .serializers import (
     CartSerializer,
     UserSerializer,
     WishlistSerializer,
+    OrderSerializer,
 )
 
 from django.contrib.auth import get_user_model
@@ -133,7 +134,15 @@ class CreateCheckoutSessionView(APIView):
             return Response({'error': 'Un produit est introuvable'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
+@api_view(["GET"])
+def get_user_orders(request):
+    """Retourne les commandes d’un utilisateur spécifique."""
+    user = request.user  # Utilisateur authentifié
+    orders = Order.objects.filter(user=user).prefetch_related("items__variant__product").order_by('-created_at')
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 # Create your views here.
 @api_view(["GET"])
 def hello_world(request):

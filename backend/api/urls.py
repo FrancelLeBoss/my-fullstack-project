@@ -36,6 +36,7 @@ from .views import (
     empty_wishlist,
     user_me,
     best_rated,
+    get_user_orders
 )
 
 urlpatterns = [
@@ -105,4 +106,6 @@ urlpatterns = [
     path("wishlist/empty/", empty_wishlist, name="empty_wishlist"),
     path("wishlist/already_exists/", already_in_wishlist, name="already_in_wishlist"),
     path("ratings/best_rated/", best_rated, name="best_rated"),
+
+    path("orders/", get_user_orders, name="get_user_orders"),
 ]

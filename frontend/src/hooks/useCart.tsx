@@ -21,19 +21,7 @@ export default function useCart() {
   const [localItems, setLocalItems] = useState<CartItem[]>(storeItems || []);
   const prevItemsRef = useRef<CartItem[]>([]);
 
-  useEffect(() => {
-  if (storeItems && storeItems.length > 0) {
-    const initializedItems = storeItems.map(item => ({
-      ...item,
-      // SECURITÉ: Si 'checked' est absent, on force 'true'
-      checked: item.checked ?? true 
-    }));
-    
-    setLocalItems(initializedItems);
-  } else {
-    setLocalItems([]);
-  }
-}, [storeItems]);
+ 
 
   const imageUrl = (images: VariantImage[] | undefined): string | undefined => {
     const main = images?.find((i) => i.mainImage === true);
@@ -221,6 +209,7 @@ export default function useCart() {
     [accessToken, apiBaseUrl, dispatch]
   );
 
+
   const updateChecked = useCallback(
     async (variantId: number, sizeId: number | undefined, checked: boolean) => {
       // optimistic update using functional setter
@@ -253,6 +242,8 @@ export default function useCart() {
     [accessToken, apiBaseUrl, dispatch]
   );
 
+  const calculateTaxes= (price: number) => Number((price * 0.15).toFixed(2));
+  const calculateShipping = (price: number) => (price > 50 || price === 0 ? 0 : 10);
   useEffect(() => {
     if (accessToken) fetchCart();
   }, [accessToken, fetchCart]);
@@ -271,6 +262,8 @@ export default function useCart() {
     updateQuantity,
     setMessageSize,
     updateChecked,
+    calculateTaxes,
+    calculateShipping,
     chooseSizeMsg,
   };
 }
