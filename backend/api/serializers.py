@@ -12,6 +12,7 @@ from .models import (
     Rating,
     Cart,
     Wishlist,
+    Address
 )
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import ValidationError
@@ -114,8 +115,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email"]
+        fields = ["id", "username", "email", "is_active","first_name", "last_name", "phone_number"] 
 
+
+class AddressSerializer(serializers.ModelSerializer):
+    """Serializer pour les adresses de livraison."""
+
+    class Meta:
+        model = Address
+        fields = ["id", "user", "street_address", "city", "state_province", "postal_code", "country","is_default"] 
 
 class ProductImageSerializer(serializers.ModelSerializer):
     """Serializer pour les images de produit."""
@@ -206,7 +214,6 @@ class ProductSerializer(serializers.ModelSerializer):
             "variants",
         ]
 
-
 class RatingSerializer(serializers.ModelSerializer):
     """Serializer pour les évaluations de produit."""
 
@@ -221,7 +228,6 @@ class RatingSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-
 
 class CartSerializer(serializers.ModelSerializer):
     """Serializer pour le panier."""

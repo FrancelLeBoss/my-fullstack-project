@@ -1,18 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { User } from '../types/User'; // Adjust the import path as necessary
+import type { AuthState, User } from '../types/User'; // Adjust the import path as necessary
+import { set } from 'date-fns';
 
 
-interface UserState {
-  user: User | null; // User information (adapt 'any' to your actual user type)
-  accessToken: string | null; // The short-lived access token
-  refreshToken: string | null; // The long-lived refresh token
-  isAuthenticated: boolean; // Authentication status
-  isLoading?: boolean; // Optional loading state for async operations
-  error?: string | null; // Optional error state for async operations
-}
 
-const initialState: UserState = {
+const initialState: AuthState = {
   user: null,
+  addresses: null,
   // Attempt to load tokens from localStorage on app start (for "Remember Me" sessions)
   accessToken: localStorage.getItem('accessToken') || null,
   refreshToken: localStorage.getItem('refreshToken') || null,
@@ -48,7 +42,25 @@ const userSlice = createSlice({
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
     },
-
+    setProfile: (state, action:PayloadAction<{user:User}>) => {
+      state.user = action.payload.user;
+      // Optionally update user data in localStorage if it exists
+      if (state.accessToken && state.refreshToken) {
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+      }
+    },
+    setAddresses: (state, action:PayloadAction<{addresses:any}>) => {
+      state.addresses = action.payload.addresses;
+      // Optionally update addresses in localStorage if user is authenticated
+      if (state.accessToken && state.refreshToken) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);            
+          userData.addresses = action.payload.addresses; 
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+      }
+    },  
     setNewAccessToken: (state, action:PayloadAction<{access:string}>) => {
       // Update the access token and refresh token in the state
       state.accessToken = action.payload.access;
@@ -103,5 +115,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { login, logout, setNewAccessToken, clearAuthTokens, rehydrateAuth } = userSlice.actions;
+export const { login, logout, setNewAccessToken, clearAuthTokens, rehydrateAuth, setAddresses } = userSlice.actions;
 export default userSlice.reducer;

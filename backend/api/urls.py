@@ -36,7 +36,9 @@ from .views import (
     empty_wishlist,
     user_me,
     best_rated,
-    get_user_orders
+    get_user_orders,
+    set_profile,
+    get_user_addresses,
 )
 
 urlpatterns = [
@@ -85,11 +87,13 @@ urlpatterns = [
     path("user/me/", user_me, name="get_current_user"),
     path("user/username/", username_exists, name="username_exists"),
     path("user/email/", email_exists, name="email_exists"),
+    path("user/get_address/", get_user_addresses, name="get_user_addresses"),
     path(
         "user/send_verification_code/",
         send_verification_code,
         name="send_verification_code",
     ),
+    path("user/set_profile/", set_profile, name="set_profile"),
     path("user/reset_password/", reset_password, name="reset_password"),
     path("comments/save/", save_comment, name="save_comment"),
     path("comments/<int:product_id>/", get_comments, name="get_comments"),

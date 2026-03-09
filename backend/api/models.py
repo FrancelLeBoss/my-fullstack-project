@@ -4,18 +4,28 @@ from django.contrib.auth.models import AbstractUser
 from django import forms
 import uuid
 
-
 class User(AbstractUser):
-    """Modèle utilisateur personnalisé pour étendre les fonctionnalités de base."""
-
+    """
+    Modèle utilisateur étendu pour Shopsy.
+    Note: 'first_name', 'last_name' et 'email' sont déjà inclus dans AbstractUser.
+    """
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    
+    
+    ROLE_CHOICES = (
+        ('customer', 'Customer'),
+        ('admin', 'Admin'),
+        ('vendor', 'Vendor'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+    
     email_verification_token = models.UUIDField(
         default=uuid.uuid4, null=True, blank=True
     )
     email_verification_sent_at = models.DateTimeField(null=True, blank=True)
     newsletter_subscription = models.BooleanField(default=False)
 
-    # FIX for related_name clashes (E304 errors) - IMPORTANT!
-    # These are needed if you get the 'clashes with reverse accessor' error
+    # FIX for related_name clashes (E304 errors)
     groups = models.ManyToManyField(
         "auth.Group",
         verbose_name=("groups"),
@@ -24,7 +34,7 @@ class User(AbstractUser):
             "The groups this user belongs to. A user will get all permissions "
             "granted to each of their groups."
         ),
-        related_name="api_user_groups",  # <-- Unique related_name
+        related_name="api_user_groups",  # Unique related_name
         related_query_name="user",
     )
     user_permissions = models.ManyToManyField(
@@ -32,10 +42,45 @@ class User(AbstractUser):
         verbose_name=("user permissions"),
         blank=True,
         help_text=("Specific permissions for this user."),
-        related_name="api_user_permissions",  # <-- Unique related_name
+        related_name="api_user_permissions",  # Unique related_name
         related_query_name="user",
     )
 
+    def __str__(self):
+        return f"{self.username} ({self.role})"
+
+
+class Address(models.Model):
+    """
+    Modèle pour gérer plusieurs adresses par utilisateur.
+    """
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name="addresses"
+    )
+    street_address = models.CharField(max_length=255)
+    apartment = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100)
+    state_province = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    country = models.CharField(max_length=100, default="Canada")
+    
+    # Définit si c'est l'adresse principale
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = "Addresses"
+
+    def save(self, *args, **kwargs):
+        # Si cette adresse est marquée comme par défaut, 
+        # on passe toutes les autres adresses de cet utilisateur à False.
+        if self.is_default:
+            Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.street_address}, {self.city} ({self.user.username})"
 
 def product_image_path(instance, filename):
     """Stocker l’image principale d'un produit dans un dossier basé sur son ID."""

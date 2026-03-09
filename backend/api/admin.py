@@ -12,6 +12,7 @@ from .models import (
     User,
     OrderItem,
     Order,
+    Address,
     Wishlist,
 )
 
@@ -124,9 +125,19 @@ class UserAdmin(admin.ModelAdmin):
         "username",
         "email",
         "is_active",
+        "first_name",
+        "last_name",
+        "phone_number", 
     )
     search_fields = ("username", "email")
     ordering = ("username",)
+
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ("user", "street_address", "city", "state_province", "postal_code", "country", "is_default")
+    search_fields = ("user__username", "street_address", "city", "state_province", "postal_code", "country")
+    list_filter = ("country", "is_default")
+    raw_id_fields = ("user",)
+    autocomplete_fields = ("user",)
 
 
 # Register models in the Django admin
@@ -140,5 +151,6 @@ admin.site.register(Rating, RatingAdmin)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(Wishlist, WishlistAdmin)
 admin.site.register(User, UserAdmin)
+admin.site.register(Address, AddressAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(OrderItem, OrderItemAdmin)

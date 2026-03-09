@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import Cart, Product, ProductVariant, ProductVariantSize, Rating, Wishlist, Order, OrderItem,SubCategory, Category
+from .models import Cart, Product, ProductVariant, ProductVariantSize, Rating, Wishlist, Order, OrderItem,SubCategory, Category,Address
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
@@ -29,6 +29,7 @@ from .serializers import (
     UserSerializer,
     WishlistSerializer,
     OrderSerializer,
+    AddressSerializer
 )
 
 from django.contrib.auth import get_user_model
@@ -356,6 +357,36 @@ def send_verification_code(request):
     except Exception as e:
         return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def set_profile(request):
+    """Définit le profil de l'utilisateur."""
+    user_id = request.data.get("user_id")
+    username = request.data.get("username")
+    email = request.data.get("email")
+    first_name = request.data.get("first_name")
+    last_name = request.data.get("last_name")
+    phone_number = request.data.get("phone_number")
+    try:
+        user = User.objects.get(pk=user_id)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.phone_number = phone_number
+        user.username = username
+        user.email = email
+        user.save()
+        return Response({"message": "Profile updated successfully!"}, status=HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=HTTP_400_BAD_REQUEST)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated]) # Assure-toi que l'utilisateur est connecté
+def get_user_addresses(request):
+    """Retourne les adresses de l'utilisateur connecté via son token."""
+    user = request.user # Plus besoin de user_id dans le body !
+    addresses = Address.objects.filter(user=user).order_by('-is_default')
+    serializer = AddressSerializer(addresses, many=True)
+    return Response(serializer.data, status=HTTP_200_OK)
 
 @api_view(["POST"])
 def reset_password(request):
@@ -642,7 +673,9 @@ def user_me(request):
             "id": user.id,
             "username": user.username,
             "email": user.email,
-            # Ajoute d'autres champs si besoin
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "phone_number": user.phone_number
         },
         status=status.HTTP_200_OK,
     )

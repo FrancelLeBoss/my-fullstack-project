@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { login } from '../redux/userSlice';
+import { login, setAddresses } from '../redux/userSlice';
 import axiosInstance from '../api/axiosInstance';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useNavigate,useSearchParams } from 'react-router-dom';
@@ -46,20 +46,27 @@ const Login = () => {
     
       const userDetailsResponse = await axiosInstance.get(`${apiBaseUrl}api/user/me/`, {
         headers: {
-          Authorization: `Bearer ${access}`, // <-- Ajout manuel de l'en-tête ici
+          Authorization: `Bearer ${access}`, 
         },
       });
       const userData = userDetailsResponse.data
 
-      // 6. Dispatch the new tokens, user data, AND 'rememberMe' status to your Redux userSlice
-      //    Your userSlice's 'login' action is now responsible for handling localStorage.
-      console.log(access,refresh, userData); // Debugging line to check user data
+      // Dans ton handleLogin, après avoir récupéré userData
+      const userAddresses = await axiosInstance.get(`${apiBaseUrl}api/user/get_address/`, {
+        headers: {
+          Authorization: `Bearer ${access}`, 
+        },
+      });
       dispatch(login({ 
         user: userData, 
         access: access, 
         refresh: refresh, 
         rememberMe: rememberMe 
       }));
+
+      dispatch(setAddresses({ addresses: userAddresses.data })); 
+
+      // 6. Show success message
 
       // 7. Redirect to the desired page after successful login
       navigate('/'); 

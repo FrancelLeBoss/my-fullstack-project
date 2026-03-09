@@ -8,6 +8,7 @@ import { orderItem } from '../types/Order';
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const user = useSelector((s: RootState) => s.user.user);
+  const addresses = useSelector((s: RootState) => s.user.addresses);
   const [orders, setOrders] = useState<orderItem[]>([]);
   const cart = useSelector(
       (state: RootState) => (state.cart as RootState["cart"]).items
@@ -186,87 +187,98 @@ const Profile = () => {
                 )} {/* <--- C'était ici que la parenthèse manquait */}
 
                 {/* --- ONGLET : ORDERS --- */}
-{activeTab === 'orders' && (
-    <div className="animate-in fade-in duration-500">
-        <h2 className="text-xl font-black uppercase mb-6 tracking-tight">
-            Historique des commandes
-        </h2>
-        
-        {orders.length === 0 ? (
-            <div className="border border-dashed border-gray-300 p-10 flex flex-col items-center">
-                <p className="text-gray-500 italic mb-4">You have no orders yet</p>
-                <button 
-                    className="bg-black text-white px-8 py-3 font-bold uppercase text-sm hover:opacity-80 transition-all"
-                    onClick={() => window.location.href = '/shop'}
-                >
-                    Start Shopping
-                </button>
-            </div>
-        ) : (
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-y border-gray-200 dark:border-gray-800 text-xs uppercase text-gray-500 bg-gray-50/50 dark:bg-gray-900/30">
-                            <th className="py-4 px-2 font-bold">Commander</th>
-                            <th className="py-4 px-2 font-bold">Date</th>
-                            <th className="py-4 px-2 font-bold">État des paiements</th>
-                            <th className="py-4 px-2 font-bold">État d'avancement</th>
-                            <th className="py-4 px-2 font-bold text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                        {orders.slice(0, 5).map((order) => (
-                            <tr 
-                                key={order.id} 
-                                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                            >
-                                <td className="py-6 px-2 underline font-bold text-primary tracking-tighter cursor-pointer">
-                                    #{order.id}
-                                </td>
-                                <td className="py-6 px-2 text-gray-600 dark:text-gray-400">
-                                    {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                                        day: 'numeric',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    })}
-                                </td>
-                                <td className="py-6 px-2 italic">
-                                    {order.is_paid ? "Payée" : "En attente"}
-                                </td>
-                                <td className="py-6 px-2 uppercase text-xs font-semibold">
-                                    <span className={order.status === 'delivered' ? 'text-green-600' : 'text-orange-500'}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                                <td className="py-6 px-2 text-right font-black tracking-tight">
-                                    ${order.total_price} CAD
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        )}
-    </div>
-)}
+                {activeTab === 'orders' && (
+                    <div className="animate-in fade-in duration-500">
+                        <h2 className="text-xl font-black uppercase mb-6 tracking-tight">
+                            Historique des commandes
+                        </h2>
+                        
+                        {orders.length === 0 ? (
+                            <div className="border border-dashed border-gray-300 p-10 flex flex-col items-center">
+                                <p className="text-gray-500 italic mb-4">You have no orders yet</p>
+                                <button 
+                                    className="bg-black text-white px-8 py-3 font-bold uppercase text-sm hover:opacity-80 transition-all"
+                                    onClick={() => window.location.href = '/shop'}
+                                >
+                                    Start Shopping
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-y border-gray-200 dark:border-gray-800 text-xs uppercase text-gray-500 bg-gray-50/50 dark:bg-gray-900/30">
+                                            <th className="py-4 px-2 font-bold">Commander</th>
+                                            <th className="py-4 px-2 font-bold">Date</th>
+                                            <th className="py-4 px-2 font-bold">État des paiements</th>
+                                            <th className="py-4 px-2 font-bold">État d'avancement</th>
+                                            <th className="py-4 px-2 font-bold text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {orders.slice(0, 5).map((order) => (
+                                            <tr 
+                                                key={order.id} 
+                                                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                                            >
+                                                <td className="py-6 px-2 underline font-bold text-primary tracking-tighter cursor-pointer">
+                                                    #{order.id}
+                                                </td>
+                                                <td className="py-6 px-2 text-gray-600 dark:text-gray-400">
+                                                    {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric'
+                                                    })}
+                                                </td>
+                                                <td className="py-6 px-2 italic">
+                                                    {order.is_paid ? "Payée" : "En attente"}
+                                                </td>
+                                                <td className="py-6 px-2 uppercase text-xs font-semibold">
+                                                    <span className={order.status === 'delivered' ? 'text-green-600' : 'text-orange-500'}>
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-6 px-2 text-right font-black tracking-tight">
+                                                    ${order.total_price} CAD
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
                 {/* --- ONGLET : ACCOUNT --- */}
                 {activeTab === 'account' && (
                     <div className="animate-in fade-in duration-500 grid md:grid-cols-2 gap-10">
                         <div>
                             <h2 className="text-xl font-black uppercase mb-4 border-b-2 border-primary w-fit">Account Details</h2>
                             <div className="space-y-2">
-                                <p><span className="font-bold">Name:</span> {user?.username || "N/A"}</p>
+                                <p><span className="font-bold">username:</span> {user?.username || "N/A"}</p>
+                                <p><span className="font-bold">First Name:</span> {user?.first_name || "N/A"}</p>
+                                <p><span className="font-bold">Last Name:</span> {user?.last_name || "N/A"}</p>
                                 <p><span className="font-bold">Email:</span> {user?.email || "N/A"}</p>
-                                <p><span className="font-bold">Phone:</span> {"2633828170"}</p>
+                                <p><span className="font-bold">Phone:</span> {user?.phone_number || "N/A"}</p>
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-xl font-black uppercase mb-4 border-b-2 border-primary w-fit">Customer Address</h2>
-                            <div className="leading-relaxed">
-                                <p className="font-bold">Francel Cabrel Pehuie Prowo</p>
-                                <p>4061 Rue Joliette, 1</p>
-                                <p>Montréal QC H1X 3H8, Canada</p>
-                            </div>
+                            {addresses && (
+                                <>
+                                    <h2 className="text-xl font-black uppercase mb-4 border-b-2 border-primary w-fit">My Addresses</h2>
+                                    <div className="space-y-4">
+                                        {addresses.map((address) => (
+                                            <div key={address.id} className="border p-4 rounded">
+                                                <p>{address.street_address}</p>
+                                                <p>{address.city}, {address.state_province} {address.postal_code}</p>
+                                                <p>{address.country}</p>
+                                                {address.is_default && <span className="text-sm text-green-600 font-bold">Default</span>}
+                                            </div>                      
+                                        ))}                           
+                                    </div>                
+                                </>
+                            )}                    
                         </div>
                     </div>
                 )}
