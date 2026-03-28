@@ -4,6 +4,22 @@ import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
 import useCart from "./useCart";
 
+export const calculateCheckoutAmounts = (subtotal: number, promoAmount = 0) => {
+  const safeSubtotal = Number(subtotal || 0);
+  const taxes = Number((safeSubtotal * 0.15).toFixed(2));
+  const shipping = safeSubtotal > 50 || safeSubtotal === 0 ? 0 : 10;
+  const safePromo = Math.max(0, Number(promoAmount || 0));
+  const total = Number((safeSubtotal + taxes + shipping - safePromo).toFixed(2));
+
+  return {
+    subtotal: safeSubtotal,
+    taxes,
+    shipping,
+    promo: safePromo,
+    total,
+  };
+};
+
 export default function useCheckout() {
   const { accessToken, isAuthenticated } = useSelector((s: RootState) => s.user);
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -22,9 +38,8 @@ export default function useCheckout() {
     }
 
     // 2. Calcul du total pour l'affichage dans l'alerte
-    const shipping = calculateShipping(totalPrice);
-    const taxes = calculateTaxes(totalPrice);
-    const finalAmount = (totalPrice + shipping + taxes).toFixed(2);
+    const pricing = calculateCheckoutAmounts(totalPrice, 0);
+    const finalAmount = pricing.total.toFixed(2);
 
     // 3. Confirmation
     const res = await Swal.fire({
@@ -63,5 +78,5 @@ export default function useCheckout() {
     }
   };
 
-  return { handleCheckout };
+  return { handleCheckout, totalPrice, calculateShipping, calculateTaxes };
 }

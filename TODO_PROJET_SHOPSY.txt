@@ -1,0 +1,124 @@
+TODO Shopsy - Priorite de livraison rapide
+Date: 27 mars 2026
+
+Legende:
+- Simplicite: 5 = tres simple, 1 = tres complexe
+- Impact: 5 = impact business/fiabilite maximal, 1 = faible impact
+
+1) Corriger les pages placeholder du tunnel achat (Checkout + Succes commande)
+Simplicite: 5
+Impact: 4
+Actions:
+- Remplacer la page Checkout vide par un recap commande exploitable.
+- Remplacer la page de succes minimale par un recap (commande, total, statut).
+
+2) Nettoyer les routes/front incoherentes et CTA casses
+Simplicite: 5
+Impact: 3
+Actions:
+- Harmoniser les chemins (/cart, /wishlist, /category, etc.).
+- Corriger les boutons et redirections qui menent vers des routes inexistantes.
+
+3) Finaliser des tests smoke minimum (front + API)
+Simplicite: 4
+Impact: 4
+Actions:
+- 1 test login.
+- 1 test ajout panier.
+- 1 test creation checkout session.
+- 1 test recuperation commandes utilisateur.
+
+4) Durcir la configuration de base production
+Simplicite: 4
+Impact: 5
+Actions:
+- DEBUG=false en production.
+- CORS sur whitelist.
+- Secret/env correctement charges et verifies au demarrage.
+
+5) Securiser les endpoints sensibles (profil, reset password, panier/wishlist)
+Simplicite: 3
+Impact: 5
+Actions:
+- Utiliser request.user cote backend au lieu de user_id fourni par le client.
+- Ajouter IsAuthenticated la ou necessaire.
+- Refaire reset password avec token OTP/lien temporaire.
+
+6) Corriger la logique Stripe de paiement confirme
+Simplicite: 3
+Impact: 5
+Actions:
+- Ajouter un webhook Stripe (checkout.session.completed).
+- Ne marquer is_paid=true qu'apres confirmation webhook.
+
+7) Ajouter la validation stock au moment de la commande
+Simplicite: 3
+Impact: 5
+Actions:
+- Verifier le stock juste avant paiement.
+- Decrementer stock de facon atomique apres paiement confirme.
+- Gerer restitution stock en cas d'annulation/echec.
+
+8) Implementer la gestion adresses complete cote client
+Simplicite: 3
+Impact: 4
+Actions:
+- CRUD adresses.
+- Selection adresse par defaut (livraison/facturation).
+
+9) Ajouter recherche + filtres backend robustes
+Simplicite: 3
+Impact: 4
+Actions:
+- Recherche texte.
+- Filtres (prix min/max, taille, dispo, promo).
+- Tri (prix, nom, popularite, nouveaute).
+
+10) Completer l'historique des commandes
+Simplicite: 3
+Impact: 4
+Actions:
+- Details lignes de commande.
+- Statut clair.
+- Totaux et infos paiement.
+
+11) Promotions/coupons (version simple)
+Simplicite: 2
+Impact: 4
+Actions:
+- Codes promo avec regles simples (expiration, type remise).
+
+12) Notifications transactionnelles fiables (email)
+Simplicite: 2
+Impact: 4
+Actions:
+- Confirmation commande.
+- Confirmation paiement.
+- Notification expedition.
+
+13) SEO technique de base
+Simplicite: 2
+Impact: 3
+Actions:
+- Meta tags par page produit/categorie.
+- Sitemap et robots.
+
+14) Retours/remboursements (MVP)
+Simplicite: 1
+Impact: 4
+Actions:
+- Demande de retour.
+- Workflow remboursement.
+
+15) Tracking livraison + integration transporteur
+Simplicite: 1
+Impact: 4
+Actions:
+- Numero de suivi.
+- Statuts de livraison visibles dans le compte client.
+
+Plan d'execution rapide recommande (2-3 semaines):
+- Etape 1: 1 a 4
+- Etape 2: 5 a 7
+- Etape 3: 8 a 10
+- Etape 4: 11 a 15

@@ -221,7 +221,8 @@ const Profile = () => {
                                                 key={order.id} 
                                                 className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                                             >
-                                                <td className="py-6 px-2 underline font-bold text-primary tracking-tighter cursor-pointer">
+                                                <td className="py-6 px-2 underline font-bold text-primary tracking-tighter cursor-pointer"
+                                                    onClick={() => window.location.href = `/payment-success/${order.id}`}>
                                                     #{order.id}
                                                 </td>
                                                 <td className="py-6 px-2 text-gray-600 dark:text-gray-400">

@@ -137,6 +137,7 @@ class CreateCheckoutSessionView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_user_orders(request):
     """Retourne les commandes d’un utilisateur spécifique."""
     user = request.user  # Utilisateur authentifié

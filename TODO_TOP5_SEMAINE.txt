@@ -1,0 +1,32 @@
+TOP 5 - Cette semaine (execution rapide)
+Date: 27 mars 2026
+
+Objectif: stabiliser le tunnel d'achat, securiser l'essentiel, et pouvoir livrer une V1 propre.
+
+1) Finaliser Checkout + page Succes commande
+- Transformer Checkout en vraie page recap (articles, livraison, taxes, total).
+- Afficher un vrai recap post-paiement (numero commande, total, statut).
+- Corriger les redirections front pour eviter les pages vides.
+
+2) Corriger les routes et CTA casses
+- Harmoniser les routes (/cart, /wishlist, /category, etc.).
+- Corriger tous les boutons "Start shopping" et liens morts.
+
+3) Securiser endpoints sensibles
+- Supprimer la dependance a user_id cote client pour profil/panier/wishlist.
+- Utiliser request.user + IsAuthenticated partout ou necessaire.
+- Bloquer toute mise a jour de profil d'un autre utilisateur.
+
+4) Corriger la logique de paiement Stripe
+- Ajouter webhook Stripe (checkout.session.completed).
+- Marquer la commande payee uniquement apres confirmation webhook.
+
+5) Ajouter tests smoke minimum
+- API: login, creation checkout session, lecture commandes utilisateur.
+- Front: ajout panier + passage paiement (smoke).
+
+Definition of Done de la semaine:
+- Le parcours achat complet fonctionne sans page placeholder.
+- Les operations sensibles sont protegees.
+- Le statut "paid" est fiable et base sur Stripe webhook.
+- Les tests smoke passent en CI/local.

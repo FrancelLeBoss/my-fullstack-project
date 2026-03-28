@@ -15,3 +15,20 @@ export interface orderItem {
   updated_at: string;
   is_paid: boolean;
 }
+
+
+export interface OrderDetails {
+  id: number;
+  total_price: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  is_paid?: boolean;
+  items?: Array<{
+    id: number;
+    quantity: number;
+    price: number;
+    variant: number;
+    size?: number | null;
+  }>;
+};
