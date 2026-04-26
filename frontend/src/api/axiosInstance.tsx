@@ -4,7 +4,8 @@ import axios from 'axios';
 import { store } from '../redux/store';
 import { setNewAccessToken, clearAuthTokens, logout } from '../redux/userSlice'; // Vos actions
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/';
+const apiBaseUrl = envApiBaseUrl.endsWith('/') ? envApiBaseUrl : `${envApiBaseUrl}/`;
 
 const axiosInstance = axios.create({
   baseURL: apiBaseUrl,
@@ -50,7 +51,7 @@ axiosInstance.interceptors.response.use(
     const refreshToken = state.user.refreshToken;
 
     // Logique de rafraîchissement du token si c'est une 401 et que ce n'est pas déjà un retry
-    if (error.response.status === 401 && !originalRequest._retry && originalRequest.url !== `${apiBaseUrl}api/token/refresh/`) {
+    if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== `${apiBaseUrl}api/token/refresh/`) {
       originalRequest._retry = true; // Marque la requête comme ayant été retentée une fois
 
       if (refreshToken) {
