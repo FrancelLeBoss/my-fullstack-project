@@ -207,9 +207,13 @@ DATABASES = {
     )
 }
 
-# Neon/Render: ensure migrations always target the public schema.
-DATABASES["default"].setdefault("OPTIONS", {})
-DATABASES["default"]["OPTIONS"]["options"] = "-c search_path=public"
+# Neon pooler does not support startup "options" parameters.
+# Apply search_path only for non-pooler PostgreSQL connections.
+db_url = os.environ.get("DATABASE_URL", "")
+db_host = urlparse(db_url).hostname or ""
+if db_host and "pooler" not in db_host:
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"]["options"] = "-c search_path=public"
 
 '''
 DATABASES = {
