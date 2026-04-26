@@ -156,9 +156,24 @@ const Navbar: React.FC<{
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    if (storedUser && token) {
-      dispatch({ type: "user/login", payload: JSON.parse(storedUser) });
+    const storedAccessToken = localStorage.getItem("accessToken");
+    const storedRefreshToken = localStorage.getItem("refreshToken");
+    if (storedUser && storedAccessToken && storedRefreshToken) {
+      try {
+        dispatch(
+          {
+            type: "user/login",
+            payload: {
+              user: JSON.parse(storedUser),
+              access: storedAccessToken,
+              refresh: storedRefreshToken,
+              rememberMe: true,
+            },
+          }
+        );
+      } catch (error) {
+        console.error("Failed to hydrate auth state from localStorage in Navbar:", error);
+      }
     }
   }, []);
 
