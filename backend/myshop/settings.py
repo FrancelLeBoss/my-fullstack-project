@@ -26,7 +26,7 @@ MEDIA_ROOT = os.path.join(
 SECRET_KEY = "django-insecure-#o!3w)%#7(etx0@ylh_7fou9z5hzweq@5*zp!g^#6(ch!#@1m_"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -110,7 +110,7 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 AUTH_USER_MODEL = "api.User"
-FRONTEND_BASE_URL = "http://localhost:5173/"
+FRONTEND_BASE_URL = os.getenv("FRONTEND_URL", "http://localhost:5173/").rstrip("/") + "/"
 ROOT_URLCONF = "myshop.urls"
 
 TEMPLATES = [
@@ -237,4 +237,4 @@ EMAIL_HOST_PASSWORD = os.getenv(
     "EMAIL_HOST_PASSWORD"
 )  # Remplacez par votre mot de passe ou un mot de passe d'application
 
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173/").rstrip("/") + "/"
