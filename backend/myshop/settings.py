@@ -126,6 +126,9 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [origin for origin in {FRONTEND_ORIGIN} if origin]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
 CSRF_TRUSTED_ORIGINS = [origin for origin in {FRONTEND_ORIGIN, BACKEND_ORIGIN} if origin]
 
 # Render place Django derrière un proxy HTTPS ; ces flags évitent les faux positifs CSRF.
@@ -140,6 +143,7 @@ if DEBUG:
         "http://127.0.0.1:8000",
     }
     CORS_ALLOWED_ORIGINS = sorted(set(CORS_ALLOWED_ORIGINS) | local_origins)
+    CORS_ALLOWED_ORIGIN_REGEXES = list(CORS_ALLOWED_ORIGIN_REGEXES)
     CSRF_TRUSTED_ORIGINS = sorted(set(CSRF_TRUSTED_ORIGINS) | local_origins)
 
 AUTH_USER_MODEL = "api.User"
