@@ -1,6 +1,7 @@
 # Django settings for myshop project.
 from pathlib import Path
 import os
+from urllib.parse import urlparse
 from dotenv import load_dotenv  # Import the load_dotenv function from dotenv
 import dj_database_url  # Import the dj_database_url module
 
@@ -8,6 +9,21 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173/").rstrip("/") + "/"
+BACKEND_URL = os.getenv("BACKEND_URL", os.getenv("RENDER_EXTERNAL_URL", "")).strip()
+
+
+def to_origin(url: str) -> str:
+    if not url:
+        return ""
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        return ""
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+FRONTEND_ORIGIN = to_origin(FRONTEND_URL)
+BACKEND_ORIGIN = to_origin(BACKEND_URL)
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -108,9 +124,26 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = [origin for origin in {FRONTEND_ORIGIN} if origin]
+CSRF_TRUSTED_ORIGINS = [origin for origin in {FRONTEND_ORIGIN, BACKEND_ORIGIN} if origin]
+
+# Render place Django derrière un proxy HTTPS ; ces flags évitent les faux positifs CSRF.
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if DEBUG:
+    local_origins = {
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    }
+    CORS_ALLOWED_ORIGINS = sorted(set(CORS_ALLOWED_ORIGINS) | local_origins)
+    CSRF_TRUSTED_ORIGINS = sorted(set(CSRF_TRUSTED_ORIGINS) | local_origins)
+
 AUTH_USER_MODEL = "api.User"
-FRONTEND_BASE_URL = os.getenv("FRONTEND_URL", "http://localhost:5173/").rstrip("/") + "/"
+FRONTEND_BASE_URL = FRONTEND_URL
 ROOT_URLCONF = "myshop.urls"
 
 TEMPLATES = [
@@ -236,5 +269,3 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")  # Remplacez par votre adresse e-
 EMAIL_HOST_PASSWORD = os.getenv(
     "EMAIL_HOST_PASSWORD"
 )  # Remplacez par votre mot de passe ou un mot de passe d'application
-
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173/").rstrip("/") + "/"
