@@ -207,6 +207,10 @@ DATABASES = {
     )
 }
 
+# Neon/Render: ensure migrations always target the public schema.
+DATABASES["default"].setdefault("OPTIONS", {})
+DATABASES["default"]["OPTIONS"]["options"] = "-c search_path=public"
+
 '''
 DATABASES = {
     "default": {
