@@ -18,6 +18,7 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
 # Import the JWT views
@@ -27,7 +28,17 @@ from rest_framework_simplejwt.views import (
     # TokenVerifyView, # Optional: Useful for debugging to verify a token's validity
 )
 
+
+def root_status(request):
+    return JsonResponse({"status": "ok", "service": "shopsy-backend"})
+
+
+def health_check(request):
+    return JsonResponse({"healthy": True})
+
 urlpatterns = [
+    path("", root_status, name="root_status"),
+    path("health/", health_check, name="health_check"),
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
