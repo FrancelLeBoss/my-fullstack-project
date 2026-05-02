@@ -18,6 +18,7 @@ import {User} from '../types/User'
 import { CommentType, ProductSize, Product as ProductType, ProductVariant, ProductVariantImage } from '../types/Product';
 import useComment from '../hooks/useComment';
 import useWishlist from '../hooks/useWishlist';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const formatRelativeTime = (dateString: any) => {
   const date = new Date(dateString);
@@ -313,7 +314,7 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
             <div className='flex lg:flex-col flex-row gap-2'>
               {selectedVariant(variantId)?.images.map((img: ProductVariantImage) => (
                 <div key={img.id} className='w-[64px] h-[64px] rounded cursor-pointer'>
-                  <img src={apiBaseUrl + img.image} className='h-full w-full' alt=""
+              <img src={resolveMediaUrl(img.image, apiBaseUrl)} className='h-full w-full' alt=""
                     onMouseEnter={() => setSelectedVariantImage(img.image)}
                   />
                 </div>
@@ -342,7 +343,7 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
                   In Wishlist
                 </div>
               )}
-              <img src={apiBaseUrl + selectedVariantImage} className='h-full w-full rounded' alt="" />
+        <img src={resolveMediaUrl(selectedVariantImage, apiBaseUrl)} className='h-full w-full rounded' alt="" />
             </div>
           </div>
           {/* Right part, details - This will scroll */}
@@ -372,8 +373,8 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
                   key={v.id}
                   src={
                     Array.isArray(v.images) && v.images.length > 0
-                      ? apiBaseUrl + (v.images.find((img: ProductVariantImage) => img.mainImage)?.image || v.images[0].image)
-                      : apiBaseUrl + "/default-image.jpg"
+                ? resolveMediaUrl(v.images.find((img: ProductVariantImage) => img.mainImage)?.image || v.images[0].image, apiBaseUrl)
+                : resolveMediaUrl("/default-image.jpg", apiBaseUrl)
                   }
                   alt="Variant Image"
                   className={`h-20 w-20 cursor-pointer border-2 ${Number(variantId) === v.id ? 'border-primary' : 'border-gray-300'}`}
@@ -536,7 +537,7 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
             >
                 <div className='h-[450px] bg-gray-200 dark:bg-gray-800'>
                     <img 
-                        src={apiBaseUrl + mainVariant(n)?.images.find((image) => image.mainImage)?.image || mainVariant(n)?.images[0]?.image} 
+                        src={resolveMediaUrl(mainVariant(n)?.images.find((image) => image.mainImage)?.image || mainVariant(n)?.images[0]?.image, apiBaseUrl)} 
                         alt={n?.title} 
                         className='w-full h-full object-cover' 
                     />

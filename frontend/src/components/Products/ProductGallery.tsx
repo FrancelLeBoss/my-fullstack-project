@@ -1,5 +1,6 @@
 import React from "react";
 import type { ProductVariantImage } from "../../types/Product";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 interface Props {
   images: ProductVariantImage[];
@@ -15,12 +16,12 @@ const ProductGallery: React.FC<Props> = ({ images, selected, onSelect, apiBaseUr
       <div className="flex flex-col gap-2">
         {images.map((img) => (
           <button key={img.id} onMouseEnter={() => onSelect(img.image)} className="w-16 h-16">
-            <img src={apiBaseUrl + img.image} className="object-cover w-full h-full rounded" alt="" />
+            <img src={resolveMediaUrl(img.image, apiBaseUrl)} className="object-cover w-full h-full rounded" alt="" />
           </button>
         ))}
       </div>
       <div className="flex-1">
-        <img src={apiBaseUrl + (selected || images[0].image)} className="w-full rounded" alt="" />
+        <img src={resolveMediaUrl(selected || images[0].image, apiBaseUrl)} className="w-full rounded" alt="" />
       </div>
     </div>
   );

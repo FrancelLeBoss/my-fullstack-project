@@ -2,6 +2,7 @@ import React, { useEffect,useState } from 'react'
 import useProduct from '../../hooks/useProduct'
 import { BsStarFill } from 'react-icons/bs';
 import { BiStar, BiSolidStarHalf } from 'react-icons/bi';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 const TopProducts = () => {
     const { topRatedProducts } = useProduct();
@@ -47,7 +48,7 @@ const TopProducts = () => {
                     shadow-xl duration-300 group max-w-[300px] mt-14 group'>
                         {/* Image section */}
                         <div className='h-[100px]'>
-                            <img onClick={() => window.location.href=`/product/${data.id}/1`} src={apiBaseUrl+data.variants[0].images.find(i => i.mainImage)?.image || "/product_fallback_img.png"} alt={data.title} className='cursor-pointer max-w-[140px] block mx-auto
+                            <img onClick={() => window.location.href=`/product/${data.id}/1`} src={resolveMediaUrl(data.variants[0].images.find(i => i.mainImage)?.image || "/product_fallback_img.png", apiBaseUrl)} alt={data.title} className='cursor-pointer max-w-[140px] block mx-auto
                             transform -translate-y-20 group-hover:scale-105 duration-300
                             drop-shadow-md'/>
                         </div>

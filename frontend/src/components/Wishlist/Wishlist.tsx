@@ -1,4 +1,5 @@
 import { IoCloseOutline } from "react-icons/io5";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -155,9 +156,9 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
     if (!images || images.length === 0) return "";
     for (let i = 0; i < images.length; i++) {
       if (images[i].mainImage) {
-        return `${apiBaseUrl}${images[i].image}`;
+        return resolveMediaUrl(images[i].image, apiBaseUrl);
       }
-      return `${apiBaseUrl}${images[0].image}`;
+      return resolveMediaUrl(images[0].image, apiBaseUrl);
     }
     return "";
   };

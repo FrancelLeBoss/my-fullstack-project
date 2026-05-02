@@ -6,6 +6,7 @@ import { RootState } from "../redux/store";
 import { CartItem, VariantImage } from "../types/Product";
 import Swal from "sweetalert2";
 import { se } from "date-fns/locale";
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 export default function useCart() {
   const dispatch = useDispatch();
@@ -25,7 +26,7 @@ export default function useCart() {
 
   const imageUrl = (images: VariantImage[] | undefined): string | undefined => {
     const main = images?.find((i) => i.mainImage === true);
-    return main ? apiBaseUrl + main.image : images && images.length ? apiBaseUrl + images[0].image : undefined;
+    return main ? resolveMediaUrl(main.image, apiBaseUrl) : images && images.length ? resolveMediaUrl(images[0].image, apiBaseUrl) : undefined;
   };
 
     const setMessageSize = useCallback((c: string | null) => {
