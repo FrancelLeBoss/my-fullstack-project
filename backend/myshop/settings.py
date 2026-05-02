@@ -22,6 +22,20 @@ def to_origin(url: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}"
 
 
+def normalize_host(raw_value: str) -> str:
+    value = (raw_value or "").strip().strip('"').strip("'")
+    if not value:
+        return ""
+
+    # Accept full URLs in env values and keep only the hostname.
+    if "://" in value:
+        parsed = urlparse(value)
+        return parsed.hostname or ""
+
+    # Accept optional host:port and keep only host for Django's ALLOWED_HOSTS.
+    return value.split(":", 1)[0]
+
+
 FRONTEND_ORIGIN = to_origin(FRONTEND_URL)
 BACKEND_ORIGIN = to_origin(BACKEND_URL)
 
@@ -39,12 +53,19 @@ MEDIA_ROOT = os.path.join(
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-#o!3w)%#7(etx0@ylh_7fou9z5hzweq@5*zp!g^#6(ch!#@1m_"
+SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    host
+    for host in (
+        normalize_host(item)
+        for item in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    )
+    if host
+]
 
 
 # Application definition
@@ -77,13 +98,10 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # Si vous avez d'autres classes d'authentification (ex: SessionAuthentication)
-        # 'rest_framework.authentication.SessionAuthentication',
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",  # C'est une bonne valeur par défaut pour les API JWT
     ),
-    # ... autres configurations DRF si vous en avez
 }
 
 from datetime import timedelta  # N'oubliez pas d'importer timedelta !
@@ -101,8 +119,7 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": False,  # Optionnel: met à jour le champ last_login de l'utilisateur
     # --- Autres paramètres par défaut (généralement pas besoin de les modifier) ---
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,  # Utilise votre SECRET_KEY de Django
-    "VERIFYING_KEY": None,
+    "SIGNING_KEY": SECRET_KEY,  
     "AUDIENCE": None,
     "ISSUER": None,
     "JWK_URL": None,
@@ -169,31 +186,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "myshop.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-
-# Détecter l'environnement (local ou production)
-# ENVIRONMENT = os.getenv("ENVIRONMENT", "development")  # Par défaut, 'development'
-
-# if ENVIRONMENT == "production":
-#     # Configuration pour PostgreSQL en production
-#     DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"))}
-# else:
-#     # Configuration pour SQLite en développement local
-#     DATABASES = {
-#         "default": {
-#             "ENGINE": "django.db.backends.sqlite3",
-#             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-#         }
-#     }
-
 '''DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -219,18 +211,7 @@ if db_host and "pooler" not in db_host:
     DATABASES["default"].setdefault("OPTIONS", {})
     DATABASES["default"]["OPTIONS"]["options"] = "-c search_path=public"
 
-'''
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "my_shop_db"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "francelKazakh*2022"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-    }
-}
-'''
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
