@@ -18,6 +18,7 @@ import {
   VariantWithImages,
 } from "../types/Product";
 import { useCategories } from "../hooks/useCategories";
+import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -473,10 +474,12 @@ export const Boutique = () => {
               productHovered === item.id &&
               photoHovered?.index !== undefined
                 ? photoHovered.img
-                : apiBaseUrl +
-                  item?.variants[0]?.images[
-                    indexOfMainImageOfvariant(item?.variants[0])
-                  ]?.image
+                : resolveMediaUrl(
+                    item?.variants[0]?.images[
+                      indexOfMainImageOfvariant(item?.variants[0])
+                    ]?.image,
+                    apiBaseUrl
+                  )
             }
             alt={item.title}
             className="w-full xl:h-[420px] lg:h-[350px] md:h-[300px] h-[250px] object-cover hover:outline-primary hover:outline hover:outline-1"
@@ -532,19 +535,22 @@ export const Boutique = () => {
                 >
                   <img
                     src={
-                      apiBaseUrl +
-                      element?.images[
-                        indexOfMainImageOfvariant(element)
-                      ]?.image
+                      resolveMediaUrl(
+                        element?.images[
+                          indexOfMainImageOfvariant(element)
+                        ]?.image,
+                        apiBaseUrl
+                      )
                     }
                     className="w-10 h-10 hover:outline hover:outline-primary hover:outline-1"
                     onMouseEnter={() =>
                       setPhotoHovered({
-                        img:
-                          apiBaseUrl +
+                        img: resolveMediaUrl(
                           element?.images[
                             indexOfMainImageOfvariant(element)
                           ]?.image,
+                          apiBaseUrl
+                        ),
                         index: element.id,
                       })
                     }
