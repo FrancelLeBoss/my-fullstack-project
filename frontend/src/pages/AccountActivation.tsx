@@ -2,6 +2,8 @@ import React, {useEffect, useState} from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
+const processedActivationTokens = new Set<string>();
+
 const AccountActivation = () => {
 
   const [searchParams] = useSearchParams();
@@ -13,6 +15,13 @@ const AccountActivation = () => {
 
   useEffect(() => {
     if(token){
+            if (processedActivationTokens.has(token)) {
+                setActivationStatus('success');
+                setMessage('Votre compte a déjà été activé.');
+                return;
+            }
+
+            processedActivationTokens.add(token);
       axiosInstance.get<any>(`/api/activate/${token}/`)
         .then(response => {
           setActivationStatus('success');
@@ -20,8 +29,17 @@ const AccountActivation = () => {
         })
        .catch(error => {
             // Handle activation errors
-            setActivationStatus('error');     
-            setMessage(error.response?.data?.detail || 'Erreur lors de l\'activation de votre compte.');
+                        const detail = error.response?.data?.detail || 'Erreur lors de l\'activation de votre compte.';
+
+                        if (error.response?.status === 409 || /déjà actif/i.test(detail)) {
+                                setActivationStatus('success');
+                                setMessage(detail || 'Votre compte est déjà actif.');
+                                return;
+                        }
+
+                        processedActivationTokens.delete(token);
+                        setActivationStatus('error');
+                        setMessage(detail);
                 });
     }else {
             // No token found in the URL
