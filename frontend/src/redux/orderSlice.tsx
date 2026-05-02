@@ -26,10 +26,13 @@ const orderSlice = createSlice({
   initialState,
   reducers: {
     getOrder: (state, action: PayloadAction<OrderState>) => {
-      return action.payload;
+      state.id = action.payload.id;
+      state.total_price = action.payload.total_price;
+      state.status = action.payload.status;
+      state.created_at = action.payload.created_at;
+      state.updated_at = action.payload.updated_at;
+      state.is_paid = action.payload.is_paid;
     },
-
-   
   },
 });
 

@@ -5,7 +5,7 @@ import axiosInstance from "../api/axiosInstance";
 import { RootState } from "../redux/store";
 import Swal from "sweetalert2";
 import { se } from "date-fns/locale";
-import { removeFromWishlist } from "../redux/WishlistSlice";
+import { addToWishlist as addToWishlistAction, removeFromWishlist as removeFromWishlistAction } from "../redux/WishlistSlice";
 
 
 export default function useWishlist() {
@@ -21,7 +21,7 @@ export default function useWishlist() {
         const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/add/`, { user_id: user.id, variant_id: variantId });
         // optionnel : récupérer variant details et dispatcher vers store
         const variantResp = await axiosInstance.get(`api/products/variant/${variantId}/`);
-        dispatch({ type: "wishlist/addToWishlist", payload: { id: res.data.wishlist_item.id, variant: variantResp.data } });
+        dispatch(addToWishlistAction({ id: res.data.wishlist_item.id, variant: variantResp.data }));
         setProductWished(true);
         Swal.fire({
           icon: 'success',
@@ -66,7 +66,7 @@ export default function useWishlist() {
       if (!user?.id || !variantId) return null;
       try {
         const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/remove/`, { user_id: user.id, variant_id: variantId });
-        dispatch({ type: "wishlist/removeFromWishlist", payload: { itemDeleted: res.data.wishlist_item.id } });
+        dispatch(removeFromWishlistAction({ itemDeleted: res.data.wishlist_item.id }));
         setProductWished(false);
         Swal.fire({
                   icon: 'success',
