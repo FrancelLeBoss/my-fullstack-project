@@ -52,6 +52,18 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise ValidationError(
                 {"password": "Le mot de passe doit comporter au moins 6 caractères."}
             )
+        if not any(c.isupper() for c in attrs["password"]):
+            raise ValidationError(
+                {"password": "Le mot de passe doit contenir au moins une lettre majuscule."}
+            )
+        if not any(c.isdigit() for c in attrs["password"]):
+            raise ValidationError(
+                {"password": "Le mot de passe doit contenir au moins un chiffre."}
+            )
+        if not any(c in "!@#$%^&*" for c in attrs["password"]):
+            raise ValidationError(
+                {"password": "Le mot de passe doit contenir au moins un caractère spécial (!@#$%^&*)."}
+            )
 
         return attrs
 

@@ -427,7 +427,6 @@ def get_user(request, user_id):
 @permission_classes([IsAuthenticated])
 def save_comment(request):
     """Gère l’ajout d’un commentaire."""
-    # Implémentez la logique d’ajout de commentaire ici
     product_id = request.data.get("product")
     user = request.user
     content = request.data.get("comment")
@@ -478,7 +477,6 @@ def save_comment(request):
 @api_view(["POST"])
 def login(request):
     """Gère la connexion de l’utilisateur."""
-    # Implémentez la logique de connexion ici
     username = request.data.get("username")
     password = request.data.get("password")
     # Vérifier que les champs sont remplis
@@ -554,7 +552,7 @@ class ActivateAccountView(generics.RetrieveAPIView):
             if user.is_active:
                 return Response(
                     {"detail": "Votre compte est déjà actif."},
-                    status=status.HTTP_200_OK,  # Ou 409 Conflict si vous préférez être plus strict
+                    status=status.HTTP_409_CONFLICT,  # 409 indique un état invalide
                 )
 
             # Active le compte
@@ -562,7 +560,6 @@ class ActivateAccountView(generics.RetrieveAPIView):
             user.email_verification_token = None  # Invalide le token après utilisation
             user.email_verification_sent_at = None
             user.save()
-            print(f"je test 1")
             return Response(
                 {"message": "Votre compte a été activé avec succès !"},
                 status=status.HTTP_200_OK,

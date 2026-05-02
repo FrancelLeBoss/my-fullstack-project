@@ -119,7 +119,7 @@ const Register = () => {
                 email,
                 username,
                 password,
-                newsLetterSubscription,
+                newsletter_subscription: newsLetterSubscription,
                 is_active: false, // L'utilisateur doit confirmer son compte
             });
             Swal.fire({
