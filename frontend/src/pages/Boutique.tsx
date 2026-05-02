@@ -126,7 +126,7 @@ export const Boutique = () => {
         .catch((error) => console.error("Error fetching cart data:", error));
 
       axiosInstance
-        .post(`api/wishlist/`, { user_id: user.id })
+        .get(`api/wishlist/`)
         .then(async (response) => {
           const wishlistData = response.data as any[];
           console.log("User ", user.id, " wishlist data: ", wishlistData);

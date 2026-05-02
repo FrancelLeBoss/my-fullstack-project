@@ -123,8 +123,8 @@ const Product = () => {
   // Vérifier si le produit est déjà dans la wishlist de l'utilisateur
   useEffect(() => {
     if (user?.id && variant?.id) {
-      axiosInstance.post<{ exists: boolean }>(`api/wishlist/already_exists/`, { user_id: user.id, variant_id: variant.id })
-        .then(response => {
+  axiosInstance.post<{ exists: boolean }>(`api/wishlist/already_exists/`, { variant_id: variant.id })
+      .then(response => {
           setProductWishedState(response.data.exists);
         })
         .catch(error => console.error("Error checking wishlist existence:", error));

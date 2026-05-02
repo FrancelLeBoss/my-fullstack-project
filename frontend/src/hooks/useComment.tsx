@@ -56,7 +56,6 @@ export default function useComment(productId?: string | number | null, userId?: 
       try {
         const res = await axiosInstance.post<{ comment: { id: number; content: string; stars: number; updated_at: string; created_at: string } }>(`api/comments/save/`, {
           comment: commentText,
-          user: user.id,
           stars: stars || 0,
           product: Number(pid),
         });

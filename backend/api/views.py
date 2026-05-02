@@ -362,23 +362,19 @@ def send_verification_code(request):
 @permission_classes([IsAuthenticated])
 def set_profile(request):
     """Définit le profil de l'utilisateur."""
-    user_id = request.data.get("user_id")
     username = request.data.get("username")
     email = request.data.get("email")
     first_name = request.data.get("first_name")
     last_name = request.data.get("last_name")
     phone_number = request.data.get("phone_number")
-    try:
-        user = User.objects.get(pk=user_id)
-        user.first_name = first_name
-        user.last_name = last_name
-        user.phone_number = phone_number
-        user.username = username
-        user.email = email
-        user.save()
-        return Response({"message": "Profile updated successfully!"}, status=HTTP_200_OK)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=HTTP_400_BAD_REQUEST)
+    user = request.user
+    user.first_name = first_name
+    user.last_name = last_name
+    user.phone_number = phone_number
+    user.username = username
+    user.email = email
+    user.save()
+    return Response({"message": "Profile updated successfully!"}, status=HTTP_200_OK)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated]) # Assure-toi que l'utilisateur est connecté
@@ -428,16 +424,17 @@ def get_user(request, user_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def save_comment(request):
     """Gère l’ajout d’un commentaire."""
     # Implémentez la logique d’ajout de commentaire ici
     product_id = request.data.get("product")
-    user_id = request.data.get("user")
+    user = request.user
     content = request.data.get("comment")
     stars = request.data.get("stars")
     # debug: quelles variables manquent et quelles valeurs ont été reçues
-    received = {"product": product_id, "user": user_id, "stars": stars, "raw": dict(request.data)}
-    missing = [name for name, val in (("product", product_id), ("user", user_id), ("stars", stars)) if not val]
+    received = {"product": product_id, "user": user.id, "stars": stars, "raw": dict(request.data)}
+    missing = [name for name, val in (("product", product_id), ("stars", stars)) if not val]
 
     if missing:
         return Response(
@@ -449,11 +446,6 @@ def save_comment(request):
         product = Product.objects.get(pk=product_id)
     except Product.DoesNotExist:
         return Response({"error": "Product not found."}, status=HTTP_400_BAD_REQUEST)
-    # Vérifier que l’utilisateur existe
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found."}, status=HTTP_400_BAD_REQUEST)
     # Créer le commentaire
     comment = Rating.objects.create(
         product=product,
@@ -471,7 +463,7 @@ def save_comment(request):
             "comment": {
                 "product_id": product_id,
                 "product_title": product.title,
-                "user_id": user_id,
+                "user_id": user.id,
                 "content": content,
                 "stars": stars,
                 "created_at": comment.created_at,
@@ -715,21 +707,17 @@ def get_cart_user(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def already_in_wishlist(request):
     """Vérifie si un produit est déjà dans la liste de souhaits."""
-    user_id = request.data.get("user_id")
+    user = request.user
     variant_id = request.data.get("variant_id")
     # Vérifier que les champs sont remplis
-    if not user_id or not variant_id:
+    if not variant_id:
         return Response(
-            {"error": "User ID and variant ID are required."},
+            {"error": "Variant ID is required."},
             status=HTTP_400_BAD_REQUEST,
         )
-    # Vérifier que l’utilisateur existe
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found."}, status=HTTP_400_BAD_REQUEST)
     # Vérifier que la variante existe
     try:
         variant = ProductVariant.objects.get(pk=variant_id)
@@ -744,23 +732,19 @@ def already_in_wishlist(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def add_to_wishlist(request):
     """Ajoute un produit à la liste de souhaits."""
-    user_id = request.data.get("user_id")
+    user = request.user
     variant_id = request.data.get("variant_id")
     created_at = timezone.now()
     updated_at = timezone.now()
     # Vérifier que les champs sont remplis
-    if not user_id or not variant_id:
+    if not variant_id:
         return Response(
-            {"error": "User ID and variant ID are required."},
+            {"error": "Variant ID is required."},
             status=HTTP_400_BAD_REQUEST,
         )
-    # Vérifier que l’utilisateur existe
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found."}, status=HTTP_400_BAD_REQUEST)
     # Vérifier que la variante existe
     try:
         variant = ProductVariant.objects.get(pk=variant_id)
@@ -790,7 +774,7 @@ def add_to_wishlist(request):
         {
             "message": "Product added to wishlist successfully!",
             "wishlist_item": {
-                "user_id": user_id,
+                "user_id": user.id,
                 "id": id,
                 "user": UserSerializer(user).data,
                 "variant_id": variant_id,
@@ -818,21 +802,17 @@ def get_wishlist(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def remove_from_wishlist(request):
     """Supprime un produit de la liste de souhaits."""
-    user_id = request.data.get("user_id")
+    user = request.user
     variant_id = request.data.get("variant_id")
     # Vérifier que les champs sont remplis
-    if not user_id or not variant_id:
+    if not variant_id:
         return Response(
-            {"error": "User ID and variant ID are required."},
+            {"error": "Variant ID is required."},
             status=HTTP_400_BAD_REQUEST,
         )
-    # Vérifier que l’utilisateur existe
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found."}, status=HTTP_400_BAD_REQUEST)
     # Vérifier que la variante existe
     try:
         variant = ProductVariant.objects.get(pk=variant_id)
@@ -862,23 +842,21 @@ def remove_from_wishlist(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def empty_wishlist(request):
     """Vider la liste de souhaits d’un utilisateur spécifique."""
-    user_id = request.data.get("user_id")
-    try:
-        user = User.objects.get(pk=user_id)
-        Wishlist.objects.filter(user=user).delete()
-        return Response(
-            {"message": "Wishlist emptied successfully!"}, status=HTTP_200_OK
-        )
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=HTTP_400_BAD_REQUEST)
+    user = request.user
+    Wishlist.objects.filter(user=user).delete()
+    return Response(
+        {"message": "Wishlist emptied successfully!"}, status=HTTP_200_OK
+    )
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def add_to_cart(request):
     """Ajoute un produit au panier."""
-    user_id = request.data.get("user_id")
+    user = request.user
     variant_id = request.data.get("variant_id")
     quantity = request.data.get("quantity", 1)
     checked = request.data.get("checked", True)
@@ -886,16 +864,11 @@ def add_to_cart(request):
     created_at = timezone.now()
     updated_at = timezone.now()
     # Vérifier que les champs sont remplis
-    if not user_id or not variant_id:
+    if not variant_id:
         return Response(
-            {"error": "User ID and variant ID are required."},
+            {"error": "Variant ID is required."},
             status=HTTP_400_BAD_REQUEST,
         )
-    # Vérifier que l’utilisateur existe
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Response({"error": "User not found."}, status=HTTP_400_BAD_REQUEST)
     # Vérifier que la variante existe
     try:
         variant = ProductVariant.objects.get(pk=variant_id)
@@ -935,7 +908,7 @@ def add_to_cart(request):
         {
             "message": "Product added to cart successfully!",
             "cart_item": {
-                "user_id": user_id,
+                "user_id": user.id,
                 "user": UserSerializer(user).data,
                 "variant_id": variant_id,
                 "quantity": quantity,

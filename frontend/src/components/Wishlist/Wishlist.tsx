@@ -112,9 +112,8 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
   ): Promise<void> => {
     try {
       let itemDeleted: number | undefined;
-      await axios
+      await axiosInstance
         .post<RemoveWishlistResponse>(`${apiBaseUrl}api/wishlist/remove/`, {
-          user_id: user?.id,
           variant_id: item.variant?.id,
         })
         .then((response) => {
@@ -139,9 +138,7 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
   // Fonction pour vider la wishlist
   const handleClearWishlist = async () => {
     try {
-      await axios.post(`${apiBaseUrl}api/wishlist/empty/`, {
-        user_id: user?.id,
-      });
+      await axiosInstance.post(`${apiBaseUrl}api/wishlist/empty/`);
       dispatch({ type: "wishlist/clearWishlist" });
       Swal.fire(
         "Liste vidée",

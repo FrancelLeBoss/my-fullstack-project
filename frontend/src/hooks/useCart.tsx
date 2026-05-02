@@ -63,7 +63,6 @@ export default function useCart() {
     const res= await axiosInstance.post(
         `${apiBaseUrl}api/cart/add/`,
         {
-          user_id: user.id,
           variant_id: variantId,
           size_id: sizeId,
           quantity: quantity,

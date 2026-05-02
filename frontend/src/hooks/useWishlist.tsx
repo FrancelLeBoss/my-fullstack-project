@@ -18,7 +18,7 @@ export default function useWishlist() {
     async (variantId?: number) => {
       if (!user?.id || !variantId) return null;
       try {
-        const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/add/`, { user_id: user.id, variant_id: variantId });
+        const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/add/`, { variant_id: variantId });
         // optionnel : récupérer variant details et dispatcher vers store
         const variantResp = await axiosInstance.get(`api/products/variant/${variantId}/`);
         dispatch(addToWishlistAction({ id: res.data.wishlist_item.id, variant: variantResp.data }));
@@ -49,7 +49,6 @@ export default function useWishlist() {
         }
         try {
           const res = await axiosInstance.post<{ exists: boolean }>(`api/wishlist/already_exists/`, {
-            user_id: user.id,
             variant_id: variantId,
           });
           setProductWished(res.data.exists);
@@ -65,7 +64,7 @@ export default function useWishlist() {
     async (variantId?: number) => {
       if (!user?.id || !variantId) return null;
       try {
-        const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/remove/`, { user_id: user.id, variant_id: variantId });
+        const res = await axiosInstance.post<{ wishlist_item: { id: number } }>(`api/wishlist/remove/`, { variant_id: variantId });
         dispatch(removeFromWishlistAction({ itemDeleted: res.data.wishlist_item.id }));
         setProductWished(false);
         Swal.fire({
