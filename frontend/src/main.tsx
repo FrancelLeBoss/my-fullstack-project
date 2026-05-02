@@ -15,3 +15,13 @@ createRoot(rootElement!).render(
     </Provider>
   </StrictMode>,
 )
+
+// Global error/log hooks to help debug runtime errors (shows stack and promise rejections)
+window.addEventListener('error', (e) => {
+  // eslint-disable-next-line no-console
+  console.error('[Global error handler]', e.message || e, e.error ? e.error.stack : null, e.filename, e.lineno, e.colno);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  // eslint-disable-next-line no-console
+  console.error('[Unhandled rejection]', e.reason);
+});
