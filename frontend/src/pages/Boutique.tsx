@@ -1,31 +1,22 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FiFilter } from "react-icons/fi";
-import { BiDownArrowAlt } from "react-icons/bi";
-import { GrDown, GrUp } from "react-icons/gr";
+import { FiFilter, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { BsArrowDownUp } from "react-icons/bs";
 import CheckboxFilter from "../components/general/CheckBox";
 import { Link } from "react-router-dom";
-import axiosInstance from "../api/axiosInstance"; // NOUVEAU : Importer votre instance Axios configurée
+import axiosInstance from "../api/axiosInstance";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../redux/store"; // ASSUREZ-VOUS QUE CE CHEMIN EST CORRECT VERS VOTRE FICHIER STORE.TSX OU STORE.TS
+import type { RootState } from "../redux/store";
 import type { User } from "../types/User";
 import useProduct from "../hooks/useProduct";
 import {
-  CategoryDetails,
-  Product,
-  ProductVariant,
-  VariantImage,
-  VariantWithImages,
+  CategoryDetails, Product, ProductVariant,
+  VariantImage, VariantWithImages,
 } from "../types/Product";
 import { useCategories } from "../hooks/useCategories";
 import { resolveMediaUrl } from "../utils/mediaUrl";
 
 const ITEMS_PER_PAGE = 6;
-
-interface NewPriceParams {
-  price: number;
-  discount: number;
-}
 
 export const new_price = (price: number, discount: number): string => {
   if (!price || !discount) return "0";
@@ -41,576 +32,456 @@ export const Boutique = () => {
   const { data, isLoading, error } = useCategories();
   const categories: CategoryDetails[] = Array.isArray(data) ? data : [];
   const { topRatedProducts } = useProduct();
-
-  // if (isLoading) return <p>Chargement...</p>;
-  // if (error) return <p>Erreur : {error.message}</p>;
-
   const categoryDetails = categories.find((cat) => cat.slug === slug);
-
-  // Utilisation de RootState pour le typage du sélecteur
   const user: User | null = useSelector((state: RootState) => state.user.user);
 
   const [genderClicked, setGenderClicked] = useState(false);
   const [priceClicked, setPriceClicked] = useState(false);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const [productHovered, setProductHovered] = useState(-1);
-  const [photoHovered, setPhotoHovered] = useState<{
-    img: string;
-    index: number;
-  } | null>(null);
-  interface FilteredType {
-    type: string;
-    value: number;
-  }
-  const [filtered, setFiltered] = useState<FilteredType | null>(null);
+  const [photoHovered, setPhotoHovered] = useState<{ img: string; index: number } | null>(null);
+  const [filtered, setFiltered] = useState<{ type: string; value: number } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [genderFilter, setGenderFilter] = useState<string[]>([]);
   const [priceFilter, setPriceFilter] = useState<number[]>([]);
   const [sortingCriteria, setSortingCriteria] = useState("");
-  const [displaySorting, setDisplaySorting] = useState(true);
+  const [displaySorting, setDisplaySorting] = useState(false);
   const [ProductsData, setProductsData] = useState<any[]>([]);
   const [subCategoryList, setSubCategoryList] = useState<any[]>([]);
 
+  // ── Tous les useEffect identiques à l'original ──
   useEffect(() => {
-    // Si le slug est "top-rated", utiliser les données préchargées (si `useProduct` les gère)
     if (slug === "top-rated") {
-        if (topRatedProducts) {
-            setProductsData(topRatedProducts);
-            setSubCategoryList([]); 
-        }
-        return;
+      if (topRatedProducts) { setProductsData(topRatedProducts); setSubCategoryList([]); }
+      return;
     }
-    
     if (!categoryDetails?.id) return;
-
-    axiosInstance
-      .get<any[]>(`api/products/category/${categoryDetails.id}/`)
-      .then((response) => setProductsData(response.data))
-      .catch((error) => console.error("Error fetching products data:", error));
-
-    axiosInstance
-      .get<any[]>(`api/categories/${categoryDetails.id}/subcategories`)
-      .then((response) => setSubCategoryList(response.data))
-      .catch((error) => {
-        console.error("Error fetching subcategories:", error);
-      });
-      
-  }, [categoryDetails, slug, topRatedProducts]); // Ajouter slug et topRatedProducts aux dépendances
+    axiosInstance.get<any[]>(`api/products/category/${categoryDetails.id}/`)
+      .then((r) => setProductsData(r.data))
+      .catch((e) => console.error("Error fetching products:", e));
+    axiosInstance.get<any[]>(`api/categories/${categoryDetails.id}/subcategories`)
+      .then((r) => setSubCategoryList(r.data))
+      .catch((e) => console.error("Error fetching subcategories:", e));
+  }, [categoryDetails, slug, topRatedProducts]);
 
   useEffect(() => {
-    if (user && user.id) {
-      axiosInstance
-        .get(`api/cart/${user.id}/`)
-        .then(async (response) => {
-          const cartData = response.data;
-          console.log("User ", user.id, " cart data: ", cartData);
-
-          const items = await Promise.all(
-            (cartData as any[]).map(async (item) => {
-              // MODIFICATION ICI : Utilisation de axiosInstance pour les détails de variante/taille
-              const variantResponse = await axiosInstance.get(
-                `api/products/variant/${item.variant}/`
-              );
-              const sizeResponse = await axiosInstance.get(
-                `api/products/size/${item.size}/`
-              );
-              return {
-                id: item.id,
-                variant: variantResponse.data,
-                size: sizeResponse.data,
-                quantity: item.quantity,
-              };
-            })
-          );
-          dispatch({ type: "cart/updateCart", payload: items });
-        })
-        .catch((error) => console.error("Error fetching cart data:", error));
-
-      axiosInstance
-        .get(`api/wishlist/`)
-        .then(async (response) => {
-          const wishlistData = response.data as any[];
-          console.log("User ", user.id, " wishlist data: ", wishlistData);
-          const items = await Promise.all(
-            wishlistData.map(async (item) => {
-              const variantResponse = await axiosInstance.get(
-                `api/products/variant/${item.variant}/`
-              );
-              const sizeResponse = await axiosInstance.get(
-                `api/products/size/${item.size}/`
-              );
-              return {
-                id: item.id,
-                variant: variantResponse.data,
-                size: sizeResponse.data,
-              };
-            })
-          );
-          dispatch({ type: "wishlist/updateWishlist", payload: items });
-        })
-        .catch((error) =>
-          console.error("Error fetching wishlist data:", error)
-        );
+    if (user?.id) {
+      axiosInstance.get(`api/cart/${user.id}/`).then(async (r) => {
+        const items = await Promise.all((r.data as any[]).map(async (item) => {
+          const vr = await axiosInstance.get(`api/products/variant/${item.variant}/`);
+          const sr = await axiosInstance.get(`api/products/size/${item.size}/`);
+          return { id: item.id, variant: vr.data, size: sr.data, quantity: item.quantity };
+        }));
+        dispatch({ type: "cart/updateCart", payload: items });
+      }).catch(console.error);
+      axiosInstance.get(`api/wishlist/`).then(async (r) => {
+        const items = await Promise.all((r.data as any[]).map(async (item) => {
+          const vr = await axiosInstance.get(`api/products/variant/${item.variant}/`);
+          const sr = await axiosInstance.get(`api/products/size/${item.size}/`);
+          return { id: item.id, variant: vr.data, size: sr.data };
+        }));
+        dispatch({ type: "wishlist/updateWishlist", payload: items });
+      }).catch(console.error);
     }
   }, [user, apiBaseUrl, dispatch]);
-  const productsBySubCategory = (subCat: number): Product[] => {
-    const filteredProducts = ProductsData.filter(
-      (product: Product) => product.subCategory === subCat
-    );
-    return filteredProducts;
-  };
+
+  useEffect(() => { setCurrentPage(1); }, [filtered, genderFilter, priceFilter]);
+
+  // ── Toutes les fonctions identiques à l'original ──
+  const productsBySubCategory = (subCat: number): Product[] =>
+    ProductsData.filter((p: Product) => p.subCategory === subCat);
 
   const totalPages = () => {
-    let ProductFiltered = ProductsData;
-    if (filtered && filtered.value) {
-      ProductFiltered = ProductFiltered.filter(
-        (p) => p.subCategory === filtered.value
-      );
-    }
-    if (genderFilter.length > 0) {
-      ProductFiltered = ProductFiltered.filter((p) =>
-        genderFilter.includes(p.gender)
-      );
-    }
-    if (priceFilter.length > 0) {
-      ProductFiltered = ProductFiltered.filter(
-        (p) =>
-          p?.variants[0]?.price <= Math.max(...priceFilter.map((v) => v || 0))
-      );
-    }
-    return Math.ceil(ProductFiltered.length / ITEMS_PER_PAGE);
+    let f = ProductsData;
+    if (filtered?.value) f = f.filter((p) => p.subCategory === filtered.value);
+    if (genderFilter.length > 0) f = f.filter((p) => genderFilter.includes(p.gender));
+    if (priceFilter.length > 0) f = f.filter((p) => p?.variants[0]?.price <= Math.max(...priceFilter.map((v) => v || 0)));
+    return Math.ceil(f.length / ITEMS_PER_PAGE);
   };
 
-  const getHighestPrice = (products: Product[]): number => {
-    return Math.max(
-      ...products.map((p: Product) => p?.variants[0]?.price || 0)
-    );
-  };
-
-  const getLowestPrice = (products: Product[]): number => {
-    return Math.min(
-      ...products.map((p: Product) => p?.variants[0]?.price || 0)
-    );
-  };
-
-  interface GetMedianPriceProduct {
-    variants: { price: number | string }[];
-  }
-
-  const getMedianPrice = (products: GetMedianPriceProduct[]): number => {
-    const prices: number[] = products
-      .map((p) => parseFloat(p?.variants[0]?.price as string) || 0)
-      .filter((price) => !isNaN(price))
-      .sort((a, b) => a - b);
-
-    if (prices.length === 0) return 0; // Gérer le cas où il n'y a aucun prix
-
+  const getHighestPrice = (p: Product[]) => Math.max(...p.map((x: Product) => x?.variants[0]?.price || 0));
+  const getLowestPrice = (p: Product[]) => Math.min(...p.map((x: Product) => x?.variants[0]?.price || 0));
+  const getMedianPrice = (products: any[]) => {
+    const prices = products.map((p) => parseFloat(p?.variants[0]?.price) || 0).filter((p) => !isNaN(p)).sort((a, b) => a - b);
+    if (!prices.length) return 0;
     const mid = Math.floor(prices.length / 2);
-
-    // Si le nombre d'éléments est impair, prendre l'élément du milieu
-    // Si le nombre d'éléments est pair, faire la moyenne des deux valeurs centrales
-    return prices.length % 2 !== 0
-      ? prices[mid]
-      : (prices[mid - 1] + prices[mid]) / 2;
+    return prices.length % 2 !== 0 ? prices[mid] : (prices[mid - 1] + prices[mid]) / 2;
   };
 
-  interface DiscountResult {
-    discount: number;
-    index: number;
-  }
+  const thereIsDiscount = (product: Product): [number, number] => {
+    if (!product?.variants?.length) {
+      return [0, -1];
+    }
 
-  interface ProductWithVariants {
-    variants: ProductVariant[];
-  }
-
-  const thereIsDiscount = (product: ProductWithVariants): [number, number] => {
-    if (!product?.variants || product.variants.length === 0) return [0, -1];
-
-    // Trouver la variante avec le plus grand rabais
     return product.variants.reduce<[number, number]>(
-      (maxDiscount, variant, index) => {
-        if (variant.discount > maxDiscount[0]) {
-          return [variant.discount, index];
-        }
-        return maxDiscount;
+      (max, v: ProductVariant, i: number) => {
+        return v.discount > max[0] ? [v.discount, i] : max;
       },
-      [0, -1] // Valeur initiale : [discount, index]
+      [0, -1]
     );
+  };
+
+  const indexOfMainImageOfvariant = (variant: VariantWithImages): number => {
+    const i = variant.images.findIndex((img: VariantImage) => img.mainImage === true);
+    return i !== -1 ? i : 0;
   };
 
   const displayedProducts = () => {
-    let filteredProducts = ProductsData;
-
-    if (filtered) {
-      filteredProducts = filteredProducts.filter((product) => {
-        return product.subCategory === filtered.value;
-      });
-    }
-
-    if (genderFilter.length > 0) {
-      filteredProducts = filteredProducts.filter((product) =>
-        genderFilter.includes(product.gender)
-      );
-    }
-    if (priceFilter.length > 0) {
-      filteredProducts = filteredProducts.filter(
-        (p) =>
-          p?.variants[0]?.price <= Math.max(...priceFilter.map((v) => v || 0))
-      );
-    }
-    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    let f = ProductsData;
+    if (filtered) f = f.filter((p) => p.subCategory === filtered.value);
+    if (genderFilter.length > 0) f = f.filter((p) => genderFilter.includes(p.gender));
+    if (priceFilter.length > 0) f = f.filter((p) => p?.variants[0]?.price <= Math.max(...priceFilter.map((v) => v || 0)));
+    return f.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   };
 
-  const handleFilterChange = (selected: string | string[]) => {
-    setGenderFilter(Array.isArray(selected) ? selected : [selected]);
-  };
-  const handleFilterPriceChange = (selected: string | string[]) => {
-    // Convert selected values to numbers and update priceFilter
-    const selectedArr = Array.isArray(selected) ? selected : [selected];
-    setPriceFilter(selectedArr.map((v) => Number(v)));
-  };
-
-  const handleSorting = (selected: string | string[]) => {
-    if (Array.isArray(selected)) {
-      setSortingCriteria(selected[0] || "");
-    } else {
-      setSortingCriteria(selected);
-    }
-  };
   const sortedProducts = () => {
-    if (sortingCriteria === "default" || sortingCriteria === "") {
-      return displayedProducts();
-    } else if (sortingCriteria === "by name") {
-      return displayedProducts().sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortingCriteria === "by price") {
-      return displayedProducts().sort(
-        (a, b) => a?.variants[0]?.price - b?.variants[0]?.price
-      );
-    }
-    return displayedProducts(); // Retourne la liste non triée par défaut si le critère n'est pas reconnu
-  };
-  const indexOfMainImageOfvariant = (variant: VariantWithImages): number => {
-    const index = variant.images.findIndex(
-      (image: VariantImage) => image.mainImage === true
-    );
-    return index !== -1 ? index : 0; // Retourne l'index ou 0 si non trouvé
+    const base = displayedProducts();
+    if (sortingCriteria === "by name") return [...base].sort((a, b) => a.title.localeCompare(b.title));
+    if (sortingCriteria === "by price") return [...base].sort((a, b) => a?.variants[0]?.price - b?.variants[0]?.price);
+    return base;
   };
 
-  useEffect(() => {
-    setCurrentPage(1); // Remettre à la première page après filtrage
-  }, [filtered, genderFilter, priceFilter]);
+  const handleFilterChange = (s: string | string[]) => setGenderFilter(Array.isArray(s) ? s : [s]);
+  const handleFilterPriceChange = (s: string | string[]) => setPriceFilter((Array.isArray(s) ? s : [s]).map(Number));
+  const handleSorting = (s: string | string[]) => setSortingCriteria(Array.isArray(s) ? s[0] || "" : s);
+
+  const pageTitle = slug === "top-rated" ? "Top Rated Products" : categoryDetails?.title ?? "Loading...";
+  const pageDesc = slug === "top-rated"
+    ? `Discover our best products (${ProductsData?.length})`
+    : `${categoryDetails?.short_desc ?? "Loading..."} (${ProductsData?.length})`;
 
   return (
-    <div className="bg-gray-100 min-h-screen pb-4 dark:bg-gray-950">
-      {/* Header */}
-      <div className="bg-primary/40 py-3">
-        <div className="text-xl text-secondary text-center font-semibold uppercase">
-          {
-          slug ==="top-rated"?"Our Top Rated Products":categoryDetails?.title ? categoryDetails.title : "Loading..."}
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-screen">
+
+      {/* ── Hero banner catégorie ── */}
+      <div className="bg-gradient-to-r from-primary to-secondary py-8">
+        <div className="container">
+          {/* Breadcrumb */}
+          <div className="text-sm text-white/70 mb-2 flex items-center gap-1.5">
+            <Link to="/" className="hover:text-white transition-colors duration-200">Home</Link>
+            <span>/</span>
+            <span className="text-white font-medium capitalize">{pageTitle}</span>
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">{pageTitle}</h1>
+          <p className="text-white/70 text-sm mt-1">{pageDesc}</p>
         </div>
       </div>
-      <div className="container mx-auto px-4">
-        {/* Breadcrumb */}
-        <div className="text-sm text-gray-600 dark:text-gray-200 font-medium capitalize">
-          <Link className="hover:underline cursor-pointer" to="/">Home</Link> /{" "}
-          {slug ==="top-rated"?"Top rated":categoryDetails?.title ? (
-            categoryDetails.title
-          ) : (
-            <span className="animate-pulse">Loading...</span>
-          )}
-        </div>
 
-        {/* Title & Sorting */}
-        <div className="flex justify-between items-center mt-3">
-          <h1 className="lg:text-3xl md:text-2xl text-xl font-medium">
-            {slug === "top-rated" ? "Discover our best products (" + ProductsData?.length + ")" 
-            : (categoryDetails?.short_desc ? categoryDetails.short_desc 
-            + "(" + ProductsData?.length + ")" : "Loading...")}
-          </h1>
-          <div className="flex items-center gap-4 text-base md:text-lg font-normal">
-            <button
-              className="flex items-center gap-2 cursor-pointer hover:bg-primary/60 dark:bg-transparent dark:hover:text-secondary dark:border-1 dark:border-primary bg-gray-200 px-3 py-1 rounded-md"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <span>{showFilters ? "Hide Filters" : "Show Filters"}</span>
-              <FiFilter />
-            </button>
-            <div
-              className="relative"
-              onMouseEnter={() => setDisplaySorting(true)}
-              onMouseLeave={() => setDisplaySorting(false)}
-            >
-              <button className="cursor-pointer group flex items-center px-3 py-1 gap-2 transition-all duration-200 rounded-md hover:text-secondary">
-                <span>Sort By</span>
-                <BiDownArrowAlt className="group-hover:rotate-180" />
-              </button>
-              {
-                <div
-                  className={`${
-                    displaySorting ? "" : "hidden"
-                  } dark:bg-gray-900 bg-gray-50 w-full p-3 top-8
-                    absolute text-xs text-gray-700`}
-                >
-                  <CheckboxFilter
-                    options={["by name", "by price"]}
-                    labels={["By name", "By price"]}
-                    uniqueSelection={true}
-                    onFilterChange={handleSorting}
-                  />
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-        {/* Content Grid */}
-<div className="flex mt-4">
-  {/* Sidebar Filtres */}
-  <div
-    className={`
-    transition-all ease-in-out duration-700 overflow-hidden 
-    ${
-      showFilters
-        ? "xl:w-1/6 lg:w-1/5 w-1/4 flex flex-col gap-4 p-4 dark:border-none border-r border-gray-300 bg-white dark:bg-gray-900 shadow-md rounded-md"
-        : "w-0 p-0 m-0"
-    }`}
-  >
-    <div className="">
-      <h2 className="lg:text-lg text-base font-semibold">Filters</h2>
-      <ul className="mt-2 space-y-2 text-gray-400">
-        {subCategoryList.map((category) => (
-          <li
-            key={category?.id}
-            className={`cursor-pointer hover:text-primary capitalize ${
-              selected === category?.id
-                ? "text-primary"
-                : " dark:text-gray-400 text-gray-700"
+      <div className="container mx-auto px-4 py-6">
+
+        {/* ── Barre filtres / tri ── */}
+        <div className="flex items-center justify-between mb-6
+        bg-white dark:bg-gray-900 rounded-2xl px-5 py-3
+        shadow-sm border border-gray-100 dark:border-gray-800">
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl
+            transition-all duration-200
+            ${showFilters
+              ? "bg-primary text-white shadow-md shadow-primary/30"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
             }`}
-            onClick={() => {
-              if (filtered?.value !== category?.id) {
-                setFiltered({
-                  type: "sub_categorie",
-                  value: category?.id,
-                });
-                setSelected(category?.id);
-              } else {
-                setFiltered(null);
-                setSelected(null);
-              }
-            }}
           >
-            {(() => {
-              const products = productsBySubCategory(category?.id);
-              return products.length > 0
-                ? `${category?.title} (${products.length})`
-                : null;
-            })()}
-          </li>
-        ))}
-      </ul>
-    </div>
-    <hr className="font-medium text-gray-700" />
-    <div className="flex flex-col cursor-pointer gap-2">
-      <div
-        className="flex justify-between font-medium"
-        onClick={() => setGenderClicked(!genderClicked)}
-      >
-        <span>Gender</span>
-        {genderClicked ? <GrUp /> : <GrDown />}
-      </div>
-      <div className={`${genderClicked ? "block" : "hidden"}`}>
-        <CheckboxFilter onFilterChange={handleFilterChange} />
-      </div>
-    </div>
-    <hr className="font-medium text-gray-700" />
-    <div className="flex flex-col cursor-pointer gap-2">
-      <div
-        className="flex justify-between font-medium"
-        onClick={() => setPriceClicked(!priceClicked)}
-      >
-        <span>Filter by price</span>
-        {priceClicked ? <GrUp /> : <GrDown />}
-      </div>
-      <div className={`${priceClicked ? "block" : "hidden"}`}>
-        <CheckboxFilter
-          options={[
-            getLowestPrice(ProductsData).toString(),
-            getMedianPrice(ProductsData).toString(),
-            getHighestPrice(ProductsData).toString(),
-          ]}
-          labels={[
-            getLowestPrice(ProductsData).toFixed(2) + "$",
-            getMedianPrice(ProductsData).toFixed(2) + "$",
-            getHighestPrice(ProductsData).toFixed(2) + "$",
-          ]}
-          onFilterChange={handleFilterPriceChange}
-          uniqueSelection={true}
-        />
-      </div>
-    </div>
-    <hr className="font-medium text-gray-700" />
-  </div>
-
-  {/* Product Grid */}
-  <div
-    className={`grid gap-3 ${
-      showFilters ? "xl:w-5/6 lg:w-4/5 w-3/4 " : "w-full"
-    } grid-cols-1 sm:grid-cols-2 pl-4`}
-  >
-    {sortedProducts()?.map((item) => (
-      <div
-        className="dark:bg-gray-900 bg-white pb-2 shadow-md hover:shadow-lg "
-        key={item.id}
-      >
-        <Link
-          to={`/product/${item.id}/${
-            productHovered === item.id &&
-            photoHovered?.index !== undefined
-              ? photoHovered.index
-              : item.variants[0].id
-          }`}
-        >
-          <img
-            src={
-              productHovered === item.id &&
-              photoHovered?.index !== undefined
-                ? photoHovered.img
-                : resolveMediaUrl(
-                    item?.variants[0]?.images[
-                      indexOfMainImageOfvariant(item?.variants[0])
-                    ]?.image,
-                    apiBaseUrl
-                  )
-            }
-            alt={item.title}
-            className="w-full xl:h-[420px] lg:h-[350px] md:h-[300px] h-[250px] object-cover hover:outline-primary hover:outline hover:outline-1"
-          />
-        </Link>
-        {productHovered !== item.id && (
-          <div
-            className="mt-2 px-2"
-            onMouseEnter={() => {
-              setProductHovered(item.id);
-              setPhotoHovered(null);
-            }}
-            onMouseLeave={() => setProductHovered(-1)}
-          >
-            <span className="font-semibold text-secondary">
-              {item.title}
-            </span>
-            <div className="block text-gray-500 text-base line-clamp-2 max-h-[72px]">
-              {item.short_desc}
-            </div>
-            <div
-              className={`flex items-center text-secondary font-medium text-lg `}
-            >
-              $
-              {thereIsDiscount(item)[0] > 0
-                ? new_price(
-                    item?.variants[thereIsDiscount(item)[1]]?.price,
-                    item.variants[thereIsDiscount(item)[1]]?.discount
-                  )
-                : item?.variants[0]?.price}
-              {thereIsDiscount(item)[0] > 0 && (
-                <s className="ml-1 text-gray-500">
-                  ${item?.variants[thereIsDiscount(item)[1]]?.price}
-                </s>
-              )}
-              {thereIsDiscount(item)[0] > 0 && (
-                <h3 className="ml-1 text-green-600">
-                  {item.variants[thereIsDiscount(item)[1]]?.discount}%
-                  discount
-                </h3>
-              )}
-            </div>
-          </div>
-        )}
-        {/* Affichage conditionnel au survol */}
-        {productHovered === item.id && (
-          <div className="mt-2 p-2 rounded-md text-sm text-gray-700 flex flex-col gap-2">
-            <div className="flex gap-1 items-center">
-              {item?.variants.map((element: ProductVariant) => (
-                <Link
-                  to={`/product/${item.id}/${element?.id}`}
-                  key={element.id}
-                >
-                  <img
-                    src={
-                      resolveMediaUrl(
-                        element?.images[
-                          indexOfMainImageOfvariant(element)
-                        ]?.image,
-                        apiBaseUrl
-                      )
-                    }
-                    className="w-10 h-10 hover:outline hover:outline-primary hover:outline-1"
-                    onMouseEnter={() =>
-                      setPhotoHovered({
-                        img: resolveMediaUrl(
-                          element?.images[
-                            indexOfMainImageOfvariant(element)
-                          ]?.image,
-                          apiBaseUrl
-                        ),
-                        index: element.id,
-                      })
-                    }
-                    onClick={() =>
-                      (window.location.href = `/product/${item.id}/${element?.id}`)
-                    }
-                  />
-                </Link>
-              ))}
-            </div>
-            <div
-              className={`flex items-center text-secondary font-medium text-lg `}
-            >
-              $
-              {thereIsDiscount(item)[0] > 0
-                ? new_price(
-                    item?.variants[thereIsDiscount(item)[1]]?.price,
-                    item.variants[thereIsDiscount(item)[1]]?.discount
-                  )
-                : item?.variants[0]?.price}
-              {thereIsDiscount(item)[0] > 0 && (
-                <s className="ml-1 text-gray-500">
-                  ${item?.variants[thereIsDiscount(item)[1]]?.price}
-                </s>
-              )}
-              {thereIsDiscount(item)[0] > 0 && (
-                <h3 className="ml-1 text-green-600">
-                  {item.variants[thereIsDiscount(item)[1]]?.discount}%
-                  discount
-                </h3>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-</div>
-        {/* Pagination */}
-        <div className="flex justify-end mt-6 gap-2">
-          <button
-            className="px-3 py-1 dark:bg-gray-900 bg-gray-300 rounded-md disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Prev
+            <FiFilter />
+            {showFilters ? "Hide Filters" : "Show Filters"}
           </button>
-          <span className="px-4 py-1 dark:bg-gray-900 bg-white dark:border-none border rounded-md">
-            {currentPage} / {totalPages()}
-          </span>
-          <button
-            className="px-3 py-1 dark:bg-gray-900 bg-gray-300 rounded-md disabled:opacity-50"
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages()))
-            }
-            disabled={currentPage === totalPages()}
+
+          {/* Sort by */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setDisplaySorting((value) => !value)}
+              className="flex items-center gap-2 text-sm font-semibold
+              px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800
+              text-gray-600 dark:text-gray-300
+              hover:bg-primary/10 hover:text-primary
+              transition-all duration-200"
+              aria-haspopup="menu"
+              aria-expanded={displaySorting}
+            >
+              <BsArrowDownUp className="text-xs" />
+              Sort By
+              <FiChevronDown className={`transition-transform duration-200 ${displaySorting ? "rotate-180" : ""}`} />
+            </button>
+
+            {displaySorting && (
+              <div className="absolute right-0 top-full mt-1 w-44 z-50
+              bg-white dark:bg-gray-800 rounded-xl shadow-xl shadow-black/10
+              border border-gray-100 dark:border-gray-700 p-2 max-h-72 overflow-y-auto">
+                <CheckboxFilter
+                  options={["by name", "by price"]}
+                  labels={["By name", "By price"]}
+                  uniqueSelection={true}
+                  onFilterChange={handleSorting}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Layout sidebar + grille ── */}
+        <div className="flex gap-6">
+
+          {/* Sidebar filtres */}
+          <aside className={`transition-all duration-500 overflow-hidden shrink-0
+            ${showFilters ? "w-60 opacity-100" : "w-0 opacity-0"}`}
           >
-            Next
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-5
+            shadow-sm border border-gray-100 dark:border-gray-800
+            flex flex-col gap-5">
+
+              <h2 className="font-bold text-sm uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                Filters
+              </h2>
+
+              {/* Sous-catégories */}
+              {subCategoryList.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Category
+                  </p>
+                  {subCategoryList.map((category) => {
+                    const count = productsBySubCategory(category?.id).length;
+                    if (!count) return null;
+                    return (
+                      <button
+                        key={category?.id}
+                        onClick={() => {
+                          if (filtered?.value !== category?.id) {
+                            setFiltered({ type: "sub_categorie", value: category?.id });
+                            setSelected(category?.id);
+                          } else {
+                            setFiltered(null); setSelected(null);
+                          }
+                        }}
+                        className={`flex items-center justify-between text-sm px-3 py-2 rounded-xl
+                        transition-all duration-200 capitalize text-left
+                        ${selected === category?.id
+                          ? "bg-primary text-white font-semibold"
+                          : "text-gray-600 dark:text-gray-400 hover:bg-primary/10 hover:text-primary"
+                        }`}
+                      >
+                        <span>{category?.title}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full
+                        ${selected === category?.id
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
+              {/* Gender */}
+              <div className="flex flex-col gap-2">
+                <button
+                  className="flex items-center justify-between text-sm font-semibold
+                  text-gray-700 dark:text-gray-300 hover:text-primary transition-colors duration-200"
+                  onClick={() => setGenderClicked(!genderClicked)}
+                >
+                  <span>Gender</span>
+                  {genderClicked ? <FiChevronUp className="text-primary" /> : <FiChevronDown />}
+                </button>
+                {genderClicked && (
+                  <div className="pt-1">
+                    <CheckboxFilter onFilterChange={handleFilterChange} />
+                  </div>
+                )}
+              </div>
+
+              <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
+              {/* Price */}
+              <div className="flex flex-col gap-2">
+                <button
+                  className="flex items-center justify-between text-sm font-semibold
+                  text-gray-700 dark:text-gray-300 hover:text-primary transition-colors duration-200"
+                  onClick={() => setPriceClicked(!priceClicked)}
+                >
+                  <span>Price range</span>
+                  {priceClicked ? <FiChevronUp className="text-primary" /> : <FiChevronDown />}
+                </button>
+                {priceClicked && (
+                  <div className="pt-1">
+                    <CheckboxFilter
+                      options={[
+                        getLowestPrice(ProductsData).toString(),
+                        getMedianPrice(ProductsData).toString(),
+                        getHighestPrice(ProductsData).toString(),
+                      ]}
+                      labels={[
+                        `$${getLowestPrice(ProductsData).toFixed(2)}`,
+                        `$${getMedianPrice(ProductsData).toFixed(2)}`,
+                        `$${getHighestPrice(ProductsData).toFixed(2)}`,
+                      ]}
+                      onFilterChange={handleFilterPriceChange}
+                      uniqueSelection={true}
+                    />
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </aside>
+
+          {/* ── Grille produits ── */}
+          <div className={`grid gap-5 flex-1
+          ${showFilters
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
+          }`}>
+            {sortedProducts()?.map((item) => {
+              const [discountVal, discountIdx] = thereIsDiscount(item);
+              const hasDiscount = discountVal > 0;
+
+              return (
+                <div
+                  key={item.id}
+                  className="group bg-white dark:bg-gray-900 rounded-2xl overflow-hidden
+                  shadow-sm hover:shadow-xl hover:shadow-primary/10
+                  border border-gray-100 dark:border-gray-800
+                  transition-all duration-300"
+                >
+                  {/* Image */}
+                  <div className="relative overflow-hidden bg-gray-50 dark:bg-gray-800"
+                    onMouseEnter={() => { setProductHovered(item.id); setPhotoHovered(null); }}
+                    onMouseLeave={() => setProductHovered(-1)}
+                  >
+                    <Link to={`/product/${item.id}/${
+                      productHovered === item.id && photoHovered?.index !== undefined
+                        ? photoHovered.index : item.variants[0].id
+                    }`}>
+                      <img
+                        src={productHovered === item.id && photoHovered?.index !== undefined
+                          ? photoHovered.img
+                          : resolveMediaUrl(
+                              item?.variants[0]?.images[indexOfMainImageOfvariant(item?.variants[0])]?.image,
+                              apiBaseUrl
+                            )
+                        }
+                        alt={item.title}
+                        className="w-full xl:h-[360px] lg:h-[300px] md:h-[260px] h-[220px]
+                        object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </Link>
+
+                    {/* Badge discount */}
+                    {hasDiscount && (
+                      <span className="absolute top-3 left-3 bg-secondary text-white
+                      text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
+                        -{item.variants[discountIdx]?.discount}%
+                      </span>
+                    )}
+
+                    {/* Variants au hover */}
+                    {productHovered === item.id && (
+                      <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 px-3">
+                        {item?.variants.map((element: ProductVariant) => (
+                          <Link to={`/product/${item.id}/${element?.id}`} key={element.id}>
+                            <img
+                              src={resolveMediaUrl(
+                                element?.images[indexOfMainImageOfvariant(element)]?.image,
+                                apiBaseUrl
+                              )}
+                              className="w-9 h-9 rounded-lg object-cover border-2 border-white
+                              hover:border-primary transition-all duration-200 shadow-md"
+                              onMouseEnter={() => setPhotoHovered({
+                                img: resolveMediaUrl(element?.images[indexOfMainImageOfvariant(element)]?.image, apiBaseUrl),
+                                index: element.id,
+                              })}
+                              onClick={() => window.location.href = `/product/${item.id}/${element?.id}`}
+                            />
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Infos produit */}
+                  <div className="p-4 flex flex-col gap-1.5">
+                    <h3 className="font-semibold text-sm dark:text-white truncate">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                      {item.short_desc}
+                    </p>
+
+                    {/* Prix */}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-bold text-secondary dark:text-primary text-base">
+                        ${hasDiscount
+                          ? new_price(item?.variants[discountIdx]?.price, item.variants[discountIdx]?.discount)
+                          : item?.variants[0]?.price
+                        }
+                      </span>
+                      {hasDiscount && (
+                        <>
+                          <s className="text-xs text-gray-400">
+                            ${item?.variants[discountIdx]?.price}
+                          </s>
+                          <span className="text-xs font-semibold text-green-500 bg-green-50
+                          dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">
+                            -{item.variants[discountIdx]?.discount}%
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Pagination ── */}
+        <div className="flex justify-center items-center gap-2 mt-10">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-sm font-semibold rounded-xl
+            bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
+            text-gray-600 dark:text-gray-300
+            hover:border-primary hover:text-primary
+            disabled:opacity-40 disabled:cursor-not-allowed
+            transition-all duration-200"
+          >
+            ← Prev
+          </button>
+
+          {Array.from({ length: totalPages() }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all duration-200
+              ${currentPage === page
+                ? "bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/30"
+                : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-primary hover:text-primary"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages()))}
+            disabled={currentPage === totalPages()}
+            className="px-4 py-2 text-sm font-semibold rounded-xl
+            bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
+            text-gray-600 dark:text-gray-300
+            hover:border-primary hover:text-primary
+            disabled:opacity-40 disabled:cursor-not-allowed
+            transition-all duration-200"
+          >
+            Next →
           </button>
         </div>
+
       </div>
     </div>
   );

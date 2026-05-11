@@ -167,60 +167,73 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
     <>
       {wishlistPopup && (
         <div className="popup">
-          <div className="h-screen w-screen fixed top-0 left-0 bg-black/50 backdrop-blur-sm z-50">
+          <div className="h-screen w-screen fixed top-0 left-0 bg-black/60 backdrop-blur-md z-50">
             <div
-              className="fixed top-1/2 left-1/3 -translate-y-1/2 p-4 shadow-md bg-white
-                         dark:bg-gray-900 rounded-md duration-200 min-w-[500px]"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                         w-[94vw] max-w-2xl max-h-[88vh] overflow-hidden
+                         p-5 md:p-6 bg-white dark:bg-gray-900 rounded-2xl duration-200
+                         border border-gray-100 dark:border-gray-800
+                         shadow-[0_20px_55px_-30px_rgba(0,0,0,0.7)]"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl text-gray-800 dark:text-gray-300">
-                  Liste des souhaits
-                </h1>
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <IoCloseOutline
-                    className="text-2xl cursor-pointer"
+                  <p className="text-xs uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500 font-semibold">
+                    Quick View
+                  </p>
+                  <h1 className="text-xl font-extrabold tracking-tight text-gray-800 dark:text-gray-100">
+                    Liste des souhaits
+                  </h1>
+                </div>
+                <div>
+                  <button
                     onClick={() => setWishlistPopup(false)}
-                  />
+                    className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300
+                               hover:bg-primary hover:text-white transition-all duration-200 flex items-center justify-center"
+                    aria-label="Close wishlist popup"
+                  >
+                    <IoCloseOutline className="text-2xl" />
+                  </button>
                 </div>
               </div>
               {user && (
                 <div>
-                  {/* wishlist items */}
-                  <div className="overflow-auto max-h-[300px] mt-4">
+                  <div className="overflow-auto max-h-[52vh] mt-4 pr-1 space-y-3">
                     {wishlist?.length > 0 ? (
                       wishlist?.map((item, index) => (
                         <div
                           key={index}
-                          className="flex items-center gap-2 border-b p-2  hover:bg-primary/4flex items-center gap-4 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm hover:shadow-md hover:bg-primary/40 duration-200"
+                          className="group flex items-center gap-4 rounded-2xl p-3 md:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+                                     shadow-[0_14px_35px_-28px_rgba(0,0,0,0.45)] hover:shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55)]
+                                     hover:border-primary/30 transition-all duration-300"
                         >
                           <img
                             src={imageUrl(item?.variant?.images)}
                             alt={item?.variant?.product?.title}
-                            className="w-16 h-16 object-cover cursor-pointer"
+                            className="w-16 h-16 md:w-20 md:h-20 object-cover cursor-pointer rounded-2xl ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-[1.02] transition-transform duration-300"
                             title="See details"
-                          onClick={() => {
-                            window.location.href = `/product/${item?.variant?.product?.id}/${item?.variant?.id}`;
-                          }}
+                            onClick={() => {
+                              window.location.href = `/product/${item?.variant?.product?.id}/${item?.variant?.id}`;
+                            }}
                           />
                           <div className="flex flex-col gap-1 w-full">
-                            <div className="text-lg text-gray-800 dark:text-gray-300 cursor-pointer" title="See details"
-                          onClick={() => {
-                            window.location.href = `/product/${item?.variant?.product?.id}/${item?.variant?.id}`;
-                          }}>
-                              {item.variant?.product?.title} (
-                              {item.variant?.color})
+                            <div
+                              className="text-sm md:text-base font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-primary transition-colors duration-200 truncate"
+                              title="See details"
+                              onClick={() => {
+                                window.location.href = `/product/${item?.variant?.product?.id}/${item?.variant?.id}`;
+                              }}
+                            >
+                              {item.variant?.product?.title} ({item.variant?.color})
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4 items-center font-semibold justify-between">
-                              {/* Prix et taille sur la même ligne */}
-                              <div className="flex items-center gap-1">
-                                <span>{item.variant?.price}</span>
-                                <span>$</span>
+                            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 flex gap-4 items-center font-semibold justify-between mt-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-1 font-bold">
+                                  {item.variant?.price} $
+                                </span>
                               </div>
-                              {/* Quantité et bouton Remove */}
                               <div className="flex items-center gap-2 justify-end w-full cursor-pointer">
                                 <button
-                                  className="text-red-500 hover:text-red-700"
+                                  className="text-red-500 hover:text-red-600 font-semibold transition-colors duration-200"
                                   onClick={() => {
                                     handleRemoveFromWishlist(item);
                                   }}
@@ -233,31 +246,31 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
                         </div>
                       ))
                     ) : (
-                      <h1 className="text-left text-gray-500 dark:text-gray-400">
+                      <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-950/30 py-10 text-center text-gray-500 dark:text-gray-400">
                         Votre liste de souhaits est vide
-                      </h1>
+                      </div>
                     )}
                     {wishlist?.length > 0 && (
-                      <div
-                        className="text-xs flex items-center gap-2 underline text-red-600 cursor-pointer hover:text-red-700"
+                      <button
+                        className="text-xs font-semibold flex items-center gap-2 text-red-500 cursor-pointer hover:text-red-600 transition-colors duration-200 mt-3"
                         onClick={handleClearWishlist}
                       >
                         <span>clear the list</span>
-                      </div>
+                      </button>
                     )}
                   </div>
                 </div>
               )}
               {!user && (
                 <div className="mt-4">
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     Login to proceed
                   </div>
                   <input
                     type="text"
                     placeholder="Username"
-                    className="w-full  border border-gray-300 dark:border-gray-500
-                                    dark:bg-gray-800 px-3 py-2 focus:outline-primary/20 focus:outline-1 mb-4"
+                    className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 rounded-xl
+                               focus:outline-primary/20 focus:outline-2 mb-3"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -266,15 +279,15 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
                     <input
                       type={showPassword ? "text" : "password"}
                       placeholder="Password"
-                      className="w-full  border border-gray-300 dark:border-gray-500
-                                    dark:bg-gray-800 px-3 py-2 focus:outline-primary/20 focus:outline-1 "
+                      className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 rounded-xl
+                                 focus:outline-primary/20 focus:outline-2"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-primary transition-colors duration-200"
                     >
                       {showPassword ? <FiEyeOff /> : <FiEye />}
                     </span>
@@ -282,7 +295,7 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
                 </div>
               )}
 
-              <div className="flex items-center justify-center group mt-4">
+              <div className="flex items-center justify-center group mt-5">
                 <button
                   onClick={() => {
                     if (!user) {
@@ -291,8 +304,10 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
                       setWishlistPopup(false);
                     }
                   }}
-                  className="text-white px-2 py-1 bg-primary hover:bg-secondary rounded-lg 
-                                "
+                  className="w-full md:w-auto min-w-[200px] text-white px-5 py-3 rounded-xl
+                             bg-gradient-to-r from-primary to-secondary font-semibold
+                             hover:scale-[1.01] active:scale-[0.99] transition-all duration-200
+                             shadow-lg shadow-primary/25"
                 >
                   {user ? "got it!" : "Register"}
                 </button>

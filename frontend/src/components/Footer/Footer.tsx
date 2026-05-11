@@ -6,16 +6,16 @@ import { HiOutlinePhone, HiOutlineMail, HiOutlineLocationMarker } from 'react-ic
 const FooterLinks = [
     { id: 1, title: "Home",     link: "/#" },
     { id: 2, title: "About",    link: "/#about" },
-    { id: 3, title: "Contact",  link: "/#contact" },
-    { id: 4, title: "Blog",     link: "/#blog" },
+    { id: 3, title: "Contact",  link: "/contact" },
+    { id: 4, title: "Help",     link: "/help" },
 ]
 
 const ShopLinks = [
-    { id: 1, title: "Men's Wear",     link: "/#mens" },
-    { id: 2, title: "Women's Wear",   link: "/#womens" },
-    { id: 3, title: "Kids Wear",      link: "/#kids" },
-    { id: 4, title: "Top Rated",      link: "/#top-rated" },
-    { id: 5, title: "Sale",           link: "/#sale" },
+    { id: 1, title: "Men's Wear",     link: "/category/men-wear" },
+    { id: 2, title: "Women's Wear",   link: "/category/women-wear" },
+    { id: 3, title: "Kids Wear",      link: "/category/kids-wear" },
+    { id: 4, title: "Top Rated",      link: "/category/top-rated" },
+    { id: 5, title: "Sale",           link: "/category/top-rated" },
 ]
 
 const socials = [

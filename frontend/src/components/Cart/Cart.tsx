@@ -119,23 +119,41 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
     <>
       {orderPopup && (
         <div className="popup">
-          <div className="h-screen w-screen fixed top-0 left-0 bg-black/50 backdrop-blur-sm z-50">
+          <div className="h-screen w-screen fixed top-0 left-0 bg-black/60 backdrop-blur-md z-50">
             <div
-              className="fixed top-1/2 left-1/3 -translate-y-1/2 p-4 shadow-md bg-white
-                         dark:bg-gray-900 rounded-md duration-200 min-w-[500px]"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                         w-[94vw] max-w-2xl max-h-[88vh] overflow-hidden
+                         p-5 md:p-6 bg-white dark:bg-gray-900 rounded-2xl duration-200
+                         border border-gray-100 dark:border-gray-800
+                         shadow-[0_20px_55px_-30px_rgba(0,0,0,0.7)]"
             >
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl text-gray-800 dark:text-gray-300">Cart</h1>
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <IoCloseOutline className="text-2xl cursor-pointer" onClick={() => setOrderPopup(false)} />
+                  <p className="text-xs uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500 font-semibold">
+                    Quick View
+                  </p>
+                  <h1 className="text-xl font-extrabold tracking-tight text-gray-800 dark:text-gray-100">Your Cart</h1>
+                </div>
+                <div>
+                  <button
+                    onClick={() => setOrderPopup(false)}
+                    className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300
+                               hover:bg-primary hover:text-white transition-all duration-200 flex items-center justify-center"
+                    aria-label="Close cart popup"
+                  >
+                    <IoCloseOutline className="text-2xl" />
+                  </button>
                 </div>
               </div>
 
               {user ? (
                 <div>
-                  <div className="overflow-auto max-h-[500px] mt-4">
+                  <div className="overflow-auto max-h-[52vh] mt-4 pr-1">
                     {loading ? (
-                      <div className="text-center py-8">Loading...</div>
+                      <div className="flex flex-col items-center justify-center py-10 gap-3">
+                        <div className="animate-spin rounded-full h-9 w-9 border-2 border-primary/30 border-t-primary"></div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Loading your cart...</p>
+                      </div>
                     ) : (
                       <CartList
                         items={items}
@@ -148,24 +166,30 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between mt-4">
-                    <h1 className="text-sm text-gray-800 dark:text-gray-300">Total Price</h1>
-                    <h1 className="text-sm text-gray-800 dark:text-gray-300">{(totalPrice ?? 0).toFixed(2)} $</h1>
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <h1 className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Price</h1>
+                    <h1 className="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">
+                      {(totalPrice ?? 0).toFixed(2)} $
+                    </h1>
                   </div>
 
                   {items.length > 0 && (
-                    <div className="text-xs flex items-center justify-between mt-2 text-red-600 cursor-pointer underline hover:text-red-700 w-32" onClick={handleClearCart}>
-                      <span>Clear the cart</span>
-                    </div>
+                    <button
+                      className="text-xs font-semibold mt-2 text-red-500 cursor-pointer hover:text-red-600 transition-colors duration-200"
+                      onClick={handleClearCart}
+                    >
+                      Clear the cart
+                    </button>
                   )}
                 </div>
               ) : (
                 <div className="mt-4">
-                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">Login to proceed</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">Login to proceed</div>
                   <input
                     type="text"
                     placeholder="Username"
-                    className="w-full  border border-gray-300 dark:border-gray-500 dark:bg-gray-800 px-3 py-2 focus:outline-primary/20 focus:outline-1 mb-4"
+                    className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 rounded-xl
+                               focus:outline-primary/20 focus:outline-2 mb-3"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -174,19 +198,20 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
                     <input
                       type={showPassword ? "text" : "password"}
                       placeholder="Password"
-                      className="w-full  border border-gray-300 dark:border-gray-500 dark:bg-gray-800 px-3 py-2 focus:outline-primary/20 focus:outline-1 "
+                      className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-2.5 rounded-xl
+                                 focus:outline-primary/20 focus:outline-2"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
-                    <span onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700">
+                    <span onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-primary transition-colors duration-200">
                       {showPassword ? <FiEyeOff /> : <FiEye />}
                     </span>
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center justify-center group mt-4">
+              <div className="flex items-center justify-center group mt-5">
                 <button
                   onClick={() => {
                     if (!user) {
@@ -196,7 +221,10 @@ const Cart: React.FC<CartProps> = ({ orderPopup, setOrderPopup }) => {
                       setOrderPopup(false);
                     }
                   }}
-                  className="text-white px-3 py-2 bg-primary hover:bg-secondary"
+                  className="w-full md:w-auto min-w-[200px] text-white px-5 py-3 rounded-xl
+                             bg-gradient-to-r from-primary to-secondary font-semibold
+                             hover:scale-[1.01] active:scale-[0.99] transition-all duration-200
+                             shadow-lg shadow-primary/25"
                 >
                   {user ? "Purchase now" : "Register"}
                 </button>

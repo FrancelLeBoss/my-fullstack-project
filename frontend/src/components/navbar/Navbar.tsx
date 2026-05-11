@@ -25,9 +25,9 @@ const Menu = [
 ]
 
 const DropdownLinks = [
-  { id: 1, name: "Trending Products", link: "/#" },
-  { id: 2, name: "Best Selling",      link: "/#" },
-  { id: 3, name: "Top Rated",         link: "/#" },
+  { id: 1, name: "Trending Products", link: "/category/trending" },
+  { id: 2, name: "Best Selling",      link: "/category/best-selling"  },
+  { id: 3, name: "Top Rated",         link: "/category/top-rated" },
 ]
 
 const Navbar: React.FC<{

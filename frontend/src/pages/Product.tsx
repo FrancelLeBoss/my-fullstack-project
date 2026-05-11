@@ -296,122 +296,160 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
   }
 
   return (
-    <div className='flex flex-col lg:gap-8'>
-      <div className="bg-primary/40 py-3">
-        <div className="text-xl text-secondary text-center font-semibold dark:text-gray-200">Product Details</div>
-        <div className="text-sm text-gray-500 text-center dark:text-gray-200"><Link className="hover:underline cursor-pointer" to="/">Home</Link> / <Link className="hover:underline cursor-pointer" to={`/category/${category?.slug}`}>{category?.title || "Loading..."}</Link>  / {product?.title}</div>
-      </div>
-      <div className='flex flex-col gap-2'>
-        {/* MAIN PRODUCT CONTENT AREA: flex-row for desktop, column for mobile */}
-        <div className='justify-center flex flex-col gap-4 lg:gap-12 
-                lg:flex-row py-2 px-4 md:px-6'> 
-          {/* Left part (photos) - This will be sticky */}
-          <div className='
-              flex gap-4 flex-col-reverse lg:flex-row items-start
-              lg:h-[740px] lg:w-[720px] w-full
-              lg:sticky lg:top-4 lg:self-start lg:mb-4 lg:pb-4 // Key changes for sticky
-            '>
-            <div className='flex lg:flex-col flex-row gap-2'>
-              {selectedVariant(variantId)?.images.map((img: ProductVariantImage) => (
-                <div key={img.id} className='w-[64px] h-[64px] rounded cursor-pointer'>
-              <img src={resolveMediaUrl(img.image, apiBaseUrl)} className='h-full w-full' alt=""
-                    onMouseEnter={() => setSelectedVariantImage(img.image)}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className='lg:h-full h-auto w-full rounded cursor-pointer relative overflow-hidden'>
-              {productWished && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '24px',
-                    left: '-48px',
-                    width: '180px',
-                    transform: 'rotate(-45deg)',
-                    background: 'linear-gradient(90deg, #22c55e 80%, #16a34a 100%)',
-                    color: 'white',
-                    textAlign: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    padding: '6px 0',
-                    zIndex: 10,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                    borderRadius: '8px'
-                  }}
-                >
-                  In Wishlist
-                </div>
-              )}
-        <img src={resolveMediaUrl(selectedVariantImage, apiBaseUrl)} className='h-full w-full rounded' alt="" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <section className="bg-gradient-to-r from-primary to-secondary py-10 md:py-12">
+        <div className="container mx-auto px-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-white/75 font-semibold">Product story</p>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mt-1">Product Details</h1>
+          <p className="text-white/80 text-sm mt-2 max-w-2xl">
+            Explore materials, variants, reviews and related picks in one polished view.
+          </p>
+          <div className="text-sm text-white/75 mt-4 flex flex-wrap items-center gap-2">
+            <Link className="hover:text-white transition-colors duration-200" to="/">Home</Link>
+            <span>/</span>
+            <Link className="hover:text-white transition-colors duration-200" to={`/category/${category?.slug}`}>{category?.title || "Loading..."}</Link>
+            <span>/</span>
+            <span className="font-medium text-white">{product?.title}</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-8 md:py-10">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] items-start">
+          {/* Left side */}
+          <div className="lg:sticky lg:top-6 self-start space-y-6">
+            <div className="grid gap-4 lg:grid-cols-[88px_minmax(0,1fr)]">
+              <div className="order-2 lg:order-1 flex lg:flex-col flex-row gap-3 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
+                {selectedVariant(variantId)?.images.map((img: ProductVariantImage) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    className={`w-[72px] h-[72px] rounded-2xl overflow-hidden flex-shrink-0 border-2 transition-all duration-200 ${
+                      selectedVariantImage === img.image ? 'border-primary shadow-md shadow-primary/20' : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <img
+                      src={resolveMediaUrl(img.image, apiBaseUrl)}
+                      className="h-full w-full object-cover"
+                      alt=""
+                      onMouseEnter={() => setSelectedVariantImage(img.image)}
+                      onClick={() => setSelectedVariantImage(img.image)}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <div className="order-1 lg:order-2 relative overflow-hidden rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-[0_20px_55px_-34px_rgba(0,0,0,0.45)]">
+                {productWished && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '24px',
+                      left: '-48px',
+                      width: '180px',
+                      transform: 'rotate(-45deg)',
+                      background: 'linear-gradient(90deg, #22c55e 80%, #16a34a 100%)',
+                      color: 'white',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      padding: '6px 0',
+                      zIndex: 10,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    In Wishlist
+                  </div>
+                )}
+                <img src={resolveMediaUrl(selectedVariantImage, apiBaseUrl)} className="h-[420px] md:h-[620px] w-full object-cover" alt="" />
+              </div>
             </div>
           </div>
-          {/* Right part, details - This will scroll */}
-          <div className='flex-1 flex flex-col gap-4 max-w-[500px]'>
-            <div className='flex flex-col gap-1'>
-              <div className='text-3xl font-semibold dark:text-gray-200'>{product?.title}</div>
-              <p className='text-lg font-medium text-gray-500 dark:text-gray-200'>{product?.short_desc}</p>
-              <p className='text-2xl text-gray-700 flex lg:flex-row flex-col lg:items-center gap-2 dark:text-gray-200 font-semibold my-3'>
-                {(variant && variant.discount > 0)
-                  ? "$" + new_price(variant.price, variant.discount)
-                  : "$" + (variant ? variant.price : "")}
-                {(variant && variant.discount > 0) && (
-                  <span className='text-xl text-gray-400 line-through'>
-                    ${variant.price}
-                  </span>
-                )}
-                {(variant && variant.discount > 0) && (
-                  <span className='text-xl text-green-600'>
-                    Enjoy -{variant.discount}% on this product
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className='flex items-center gap-2'>
-              {product?.variants?.map((v: ProductVariant) => (
-                <img
-                  key={v.id}
-                  src={
-                    Array.isArray(v.images) && v.images.length > 0
-                ? resolveMediaUrl(v.images.find((img: ProductVariantImage) => img.mainImage)?.image || v.images[0].image, apiBaseUrl)
-                : resolveMediaUrl("/default-image.jpg", apiBaseUrl)
-                  }
-                  alt="Variant Image"
-                  className={`h-20 w-20 cursor-pointer border-2 ${Number(variantId) === v.id ? 'border-primary' : 'border-gray-300'}`}
-                  onClick={() => {
-                    setVariantId(v.id);
-                  }}
-                />
-              ))}
-            </div>
-            <div className='flex flex-col gap-4 '>
-              <div className='flex justify-between items-center gap-2 lg:text-lg md:text-base text-sm font-bold dark:text-gray-100 text-gray-700'>
-                <div className=''>Select Size</div>
-                <Link to={'/'} className='flex items-center gap-1'><FaRuler /> Size guide</Link>
-              </div>
-              <div className='grid lg:grid-cols-4 md:grid-cols-3 grid-cols-2 lg:gap-4 gap-2 font-semibold'>
-                {
-                  product?.variants?.find((v: ProductVariant) => v.id == variantId)?.sizes.map((s: ProductSize) => (
-                    <div key={s.id} className={`p-4 border ${sizeId == s.id ? 'border-primary' : 'border-gray-300'} cursor-pointer`}
-                      onClick={() => setSizeId(s.id)}>
-                      {s.size}
+
+          {/* Right side */}
+          <div className="space-y-5">
+            <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 md:p-6 shadow-[0_20px_55px_-34px_rgba(0,0,0,0.45)]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <h2 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900 dark:text-white">{product?.title}</h2>
+                  <p className="text-base md:text-lg font-medium text-gray-500 dark:text-gray-300">{product?.short_desc}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="text-right text-3xl md:text-4xl font-black tracking-tight text-gray-900 dark:text-white">
+                    {(variant && variant.discount > 0)
+                      ? "$" + new_price(variant.price, variant.discount)
+                      : "$" + (variant ? variant.price : "")}
+                  </div>
+                  {(variant && variant.discount > 0) && (
+                    <div className="flex flex-wrap justify-end gap-2 text-sm">
+                      <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1 text-gray-500 dark:text-gray-300 line-through">${variant.price}</span>
+                      <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/20 px-3 py-1 text-green-700 dark:text-green-400 font-semibold">
+                        Enjoy -{variant.discount}% on this product
+                      </span>
                     </div>
-                  ))
-                }
+                  )}
+                </div>
               </div>
-              <div className={`${!sizeId && chooseSizeMsg ? 'flex font-serif text-red-600' : 'hidden'}`}>Please select a size </div>
-              <div className='flex flex-col items-center gap-4'>
-                <button className='bg-primary hover:bg-secondary
-                                 text-gray-50 py-4 px-4 w-full font-semibold text-lg' onClick={() => {
+
+              <div className="mt-6 grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {product?.variants?.map((v: ProductVariant) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    className={`group overflow-hidden rounded-2xl border-2 transition-all duration-200 bg-gray-50 dark:bg-gray-800 ${Number(variantId) === v.id ? 'border-primary shadow-md shadow-primary/15' : 'border-gray-200 dark:border-gray-700 hover:border-primary/40'}`}
+                    onClick={() => {
+                      setVariantId(v.id);
+                    }}
+                  >
+                    <img
+                      src={
+                        Array.isArray(v.images) && v.images.length > 0
+                          ? resolveMediaUrl(v.images.find((img: ProductVariantImage) => img.mainImage)?.image || v.images[0].image, apiBaseUrl)
+                          : resolveMediaUrl("/default-image.jpg", apiBaseUrl)
+                      }
+                      alt="Variant Image"
+                      className="h-24 w-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-3 text-sm md:text-base font-bold text-gray-700 dark:text-gray-200">
+                  <div>Select Size</div>
+                  <Link to={'/'} className="inline-flex items-center gap-1 text-primary hover:opacity-80 transition-opacity"><FaRuler /> Size guide</Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 font-semibold">
+                  {product?.variants?.find((v: ProductVariant) => v.id == variantId)?.sizes.map((s: ProductSize) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className={`p-4 rounded-2xl border transition-all duration-200 ${sizeId == s.id ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-primary/40'}`}
+                      onClick={() => setSizeId(s.id)}
+                    >
+                      {s.size}
+                    </button>
+                  ))}
+                </div>
+                <div className={`${!sizeId && chooseSizeMsg ? 'flex font-serif text-red-600' : 'hidden'}`}>Please select a size </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  className="bg-gradient-to-r from-primary to-secondary text-gray-50 py-4 px-4 w-full rounded-2xl font-semibold text-lg shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                  onClick={() => {
                     setMessageSize("Please select a size before adding to cart.");
                     if (sizeId) {
-                      addToCart(variantId!, sizeId, 1,true);
+                      addToCart(variantId!, sizeId, 1, true);
                     }
-                  }}>Add to Cart</button>
-                <button title={productWished ? "Remove from the wishlist"
-                  : "Add to the wish list"} className='text-gray-50
-                                 hover:bg-black bg-black/80 dark:bg-gray-800 dark:hover:bg-black/80
-                                 lg:py-4 lg:px-4 p-3 text-lg font-semibold w-full'
+                  }}
+                >
+                  Add to Cart
+                </button>
+                <button
+                  title={productWished ? "Remove from the wishlist" : "Add to the wish list"}
+                  className="text-gray-50 hover:bg-black bg-black/85 dark:bg-gray-800 dark:hover:bg-black/80 rounded-2xl lg:py-4 lg:px-4 p-3 text-lg font-semibold w-full transition-all active:scale-[0.99]"
                   onClick={() => {
                     if (productWished) {
                       removeFromWishlist(variantId!);
@@ -420,64 +458,70 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
                       addToWishlist(variantId!);
                       setProductWishedState(true);
                     }
-                  }}>{productWished ? "Remove from the Wishlist" : "Add to Wishlist"}</button>
+                  }}
+                >
+                  {productWished ? "Remove from the Wishlist" : "Add to Wishlist"}
+                </button>
               </div>
-              <div className='flex flex-col gap-2 text-lg mt-4'>
-                <div className='text-gray-700 dark:text-gray-200 font-semibold text-2xl lg:text-3xl'>Product details</div>
-                <p className='font-medium text-gray-500 dark:text-gray-400'>{product?.long_desc}</p>
-                <div className='font-medium text-gray-700 dark:text-gray-200 cursor-pointer hover:text-primary dark:hover:text-primary text-xl'>More about the product</div>
+            </div>
+
+            <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 md:p-6 shadow-[0_20px_55px_-34px_rgba(0,0,0,0.45)] space-y-4">
+              <div className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">Product details</div>
+              <p className="font-medium text-gray-500 dark:text-gray-400 leading-relaxed">{product?.long_desc}</p>
+              <div className="font-semibold text-gray-700 dark:text-gray-200 cursor-pointer hover:text-primary dark:hover:text-primary transition-colors text-lg">
+                More about the product
               </div>
-              <hr />
-              <div className='flex items-center justify-between cursor-pointer text-xl lg:text-2xl' onClick={() => setDisplayReviews(!displayReviews)}>
-                <span className=''>Reviews ({comments.length})</span>
-                <div className='flex gap-1 items-center text-base lg:text-xl'>
-{/*                   <span className='text-primary'>{averageStars()}</span><BsStarFill className='text-primary' /> */}
+            </div>
+
+            <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 md:p-6 shadow-[0_20px_55px_-34px_rgba(0,0,0,0.45)]">
+              <div className="flex items-center justify-between cursor-pointer text-lg md:text-xl font-semibold text-gray-900 dark:text-white" onClick={() => setDisplayReviews(!displayReviews)}>
+                <span>Reviews ({comments.length})</span>
+                <div className="flex gap-1 items-center text-base md:text-lg text-primary">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className={`
-                      cursor-pointer
-                      transition-colors duration-300 text-primary
-                      `} >
-                        {
-                          star <= averageStars() ? <BsStarFill /> : <BiStar />
-                        }
+                    <span key={star} className="cursor-pointer transition-colors duration-300 text-primary">
+                        {star <= averageStars() ? <BsStarFill /> : <BiStar />}
                     </span>
                   ))}
                   <span> {displayReviews ? <GrUp /> : <GrDown />} </span>
                 </div>
               </div>
+
               {displayReviews && (
-                <div className='flex flex-col gap-2'>
+                <div className="mt-5 flex flex-col gap-4">
                   {user && (
-                    <div className='flex flex-col gap-2'>
-                      <textarea className='p-2 border focus:border-none focus:outline-1 focus:outline-primary bg-transparent' placeholder="Add a comment" onChange={(e) => setCommentState(e.target.value)} value={comment || ""}></textarea>
-                      <div className='flex justify-between items-center'>
-                        <div> How many stars?</div>
-                        <div className='flex items-center justify-end gap-1'>
+                    <div className="rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3">
+                      <textarea
+                        className="min-h-[120px] p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+                        placeholder="Add a comment"
+                        onChange={(e) => setCommentState(e.target.value)}
+                        value={comment || ""}
+                      ></textarea>
+                      <div className="flex flex-wrap justify-between items-center gap-3">
+                        <div className="font-semibold text-gray-700 dark:text-gray-200">How many stars?</div>
+                        <div className="flex items-center justify-end gap-1 text-primary">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <span
                               key={star}
                               onMouseEnter={() => setHoveredStar(star)}
                               onMouseLeave={() => setHoveredStar(0)}
                               onClick={() => setSelectedStar(star)}
-                              className={`
-                                cursor-pointer
-                                transition-colors duration-300 text-primary
-                              `}
+                              className="cursor-pointer transition-colors duration-300"
                             >
-                              {
-                                (hoveredStar > 0 ? star <= hoveredStar : star <= selectedStar)
-                                  ? <BsStarFill  />
-                                  : <BiStar />
-                               }
+                              {(hoveredStar > 0 ? star <= hoveredStar : star <= selectedStar)
+                                  ? <BsStarFill />
+                                  : <BiStar />}
                             </span>
                           ))}
                         </div>
                       </div>
-                      <button className='p-1 bg-primary hover:bg-secondary text-gray-100' onClick={() =>{
-      addComment(comment, selectedStar, productId)
-    }
-  
-  }>Submit</button>
+                      <button
+                        className="self-start px-5 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:scale-[1.01] transition-all"
+                        onClick={() =>{
+                        addComment(comment, selectedStar, productId)
+                      }}
+                      >
+                        Submit
+                      </button>
                     </div>
                   )}
                   {!user && (
@@ -486,44 +530,42 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
                     </div>
                   )}
 
-                  {
-                    currentComments.map((c) => (
-                      <div key={c.id} className='flex flex-col gap-1'>
-                        <div className='text-gray-700 dark:text-gray-200 font-semibold flex items-center justify-between'>
-                          <span>{userInfos[c.user]?.username || "Loading..."}</span>
-                          <span>{formatRelativeTime(c.updated_at)}</span>
-                        </div>
-                        <p className='text-gray-500 dark:text-gray-400'>{c.comment}</p>
-                        <div className='flex items-center gap-1'>
-                          {
-                            [1, 2, 3, 4, 5].map((star) => (
-                              <span key={star} className={`
-                                cursor-pointer text-primary`}>
+                  {currentComments.map((c) => (
+                    <div key={c.id} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-4 flex flex-col gap-2">
+                      <div className="text-gray-800 dark:text-gray-100 font-semibold flex items-center justify-between gap-3">
+                        <span>{userInfos[c.user]?.username || "Loading..."}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{formatRelativeTime(c.updated_at)}</span>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{c.comment}</p>
+                      <div className="flex items-center gap-1 text-primary">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                              <span key={star} className="cursor-pointer">
                                 {star <= c.stars ? <BsStarFill /> : <BiStar />}
                               </span>
                             ))}
-                        </div>
                       </div>
-                    ))
-                  }
-                  <div className='flex items-center justify-end gap-2'>
-                    <button className='text-gray-600 dark:text-gray-400 p-2' onClick={handlePreviousPage} disabled={currentComPage === 1}>Previous</button>
-                    <span className='text-gray-500'>{currentComPage} / {totalCommentsPages}</span>
-                    <button className='dark:text-gray-400 text-gray-600 p-2' onClick={handleNextPage} disabled={currentComPage === totalCommentsPages}>Next</button>
+                    </div>
+                  ))}
+
+                  <div className="flex items-center justify-end gap-2 pt-2 text-sm">
+                    <button className="px-3 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={handlePreviousPage} disabled={currentComPage === 1}>Previous</button>
+                    <span className="text-gray-500">{currentComPage} / {totalCommentsPages}</span>
+                    <button className="px-3 py-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={handleNextPage} disabled={currentComPage === totalCommentsPages}>Next</button>
                   </div>
                 </div>
               )}
-              <hr />
             </div>
           </div>
         </div>
-        <div className='flex flex-col gap-2'>
-          <div className='text-2xl p-5 font-semibold'>People wear this so nicely</div>
-          <div></div>
+
+        <div className="mt-10 space-y-4">
+          <div className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">People wear this so nicely</div>
+          <div className="h-px bg-gray-200 dark:bg-gray-800" />
         </div>
-        <div className='flex flex-col gap-2'>
-          <div className='text-2xl p-5 font-semibold'>You might be interested...</div>
-          <div className='p-5 px-12 flex gap-4 mb-4 overflow-x-auto snap-x snap-mandatory'>
+
+        <div className="mt-10 space-y-4">
+          <div className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">You might be interested...</div>
+          <div className="p-1 md:p-2 flex gap-4 mb-4 overflow-x-auto snap-x snap-mandatory pb-3">
     {
         sortRelatedProducts(
             relatedBySubCatProducts.length > 5 ? relatedBySubCatProducts : relatedByCatProducts,
@@ -532,19 +574,21 @@ const sortRelatedProducts = (products: ProductType[], currentProduct: ProductTyp
         .filter((p) => p.id !== product?.id).map((n) => (
             <a 
                 key={n.id} 
-                className='flex flex-col gap-2 cursor-pointer flex-shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 snap-start' 
+                className='flex flex-col gap-3 cursor-pointer flex-shrink-0 w-[78vw] sm:w-1/2 md:w-1/3 lg:w-1/4 snap-start rounded-3xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-[0_20px_55px_-34px_rgba(0,0,0,0.45)] hover:shadow-[0_24px_60px_-32px_rgba(0,0,0,0.55)] transition-all duration-300' 
                 href={`/product/${n.id}/${n.variants[0]?.id}`} 
             >
-                <div className='h-[450px] bg-gray-200 dark:bg-gray-800'>
+                <div className='h-[420px] bg-gray-100 dark:bg-gray-800'>
                     <img 
                         src={resolveMediaUrl(mainVariant(n)?.images.find((image) => image.mainImage)?.image || mainVariant(n)?.images[0]?.image, apiBaseUrl)} 
                         alt={n?.title} 
-                        className='w-full h-full object-cover' 
+                        className='w-full h-full object-cover hover:scale-[1.02] transition-transform duration-500' 
                     />
                 </div>
-                <div className='text-lg font-semibold dark:text-gray-200'>{n.title}</div>
-                <div className='block text-gray-500 text-base line-clamp-2 max-h-[72px]'>{n.short_desc}</div>
-                <div className='text-primary font-bold'>${mainVariant(n)?.price}</div>
+                <div className='p-4 space-y-2'>
+                  <div className='text-lg font-semibold dark:text-gray-100 text-gray-900'>{n.title}</div>
+                  <div className='block text-gray-500 dark:text-gray-400 text-base line-clamp-2 max-h-[72px]'>{n.short_desc}</div>
+                  <div className='text-primary font-bold text-lg'>${mainVariant(n)?.price}</div>
+                </div>
             </a>
         ))
     }
