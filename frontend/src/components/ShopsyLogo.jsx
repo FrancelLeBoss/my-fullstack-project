@@ -28,7 +28,7 @@ const ShopsyLogo = ({ size = "md" }) => {
 
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: s.gap }}>
-      {/* Icône cercle noir avec S doré */}
+      {/* Icône cercle avec couleurs de thème */}
       <svg
         width={s.circle}
         height={s.circle}
@@ -37,10 +37,10 @@ const ShopsyLogo = ({ size = "md" }) => {
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
-        <circle cx={r} cy={r} r={r} fill="#111827" />
+        <circle cx={r} cy={r} r={r} className="fill-gray-900 dark:fill-gray-100" />
         <path
           d={pathD}
-          stroke="#F59E0B"
+          className="stroke-primary dark:stroke-secondary"
           strokeWidth={sw}
           strokeLinecap="round"
           fill="none"
@@ -49,23 +49,21 @@ const ShopsyLogo = ({ size = "md" }) => {
           cx={x2 + pad * 0.4}
           cy={y3 + pad * 0.9 + sw * 0.5}
           r={sw * 0.65}
-          fill="#F59E0B"
+          className="fill-primary dark:fill-secondary"
         />
       </svg>
 
       {/* Wordmark shop + sy */}
       <span
+        className="font-black select-none leading-none"
         style={{
           fontFamily: "'Archivo Black', 'Arial Black', sans-serif",
           fontSize: s.fontSize,
-          fontWeight: 800,
           letterSpacing: "-0.03em",
-          lineHeight: 1,
-          userSelect: "none",
         }}
       >
-        <span style={{ color: "#111827" }}>shop</span>
-        <span style={{ color: "#F59E0B" }}>sy</span>
+        <span className="text-gray-900 dark:text-gray-100">shop</span>
+        <span className="text-primary dark:text-secondary">sy</span>
       </span>
     </div>
   );
