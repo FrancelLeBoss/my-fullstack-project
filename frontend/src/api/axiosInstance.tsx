@@ -4,8 +4,12 @@ import axios from 'axios';
 import { store } from '../redux/store';
 import { setNewAccessToken, clearAuthTokens, logout } from '../redux/userSlice'; // Vos actions
 
-const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/';
+const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8000/' : '');
 const apiBaseUrl = envApiBaseUrl.endsWith('/') ? envApiBaseUrl : `${envApiBaseUrl}/`;
+
+if (!envApiBaseUrl && import.meta.env.PROD) {
+  console.error('VITE_API_BASE_URL is missing in production. API requests will fail until it is configured.');
+}
 
 const axiosInstance = axios.create({
   baseURL: apiBaseUrl,
@@ -24,11 +28,11 @@ axiosInstance.interceptors.request.use(
     //console.log(`[Axios Interceptor] URL: ${config.url}, Token found: ${!!accessToken}`); // Ajouté pour le débogage
     // Check if headers exist, and if not, initialize them as an empty object
     if (!config.headers) {
-      config.headers = {};
+      config.headers = axios.AxiosHeaders.from({});
     }
 
     if (accessToken) {
-      config.headers['Authorization'] = `Bearer ${accessToken}`; // Ajoute le token à l'en-tête
+      config.headers.set('Authorization', `Bearer ${accessToken}`); // Ajoute le token à l'en-tête
     }
     return config; // Retourne la configuration (modifiée) pour que la requête continue
   },
@@ -64,7 +68,9 @@ axiosInstance.interceptors.response.use(
           store.dispatch(setNewAccessToken(response.data));
 
           // Met à jour l'en-tête de la requête originale avec le nouveau token
-          originalRequest.headers['Authorization'] = `Bearer ${response.data.access}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.set('Authorization', `Bearer ${response.data.access}`);
+          }
 
           // Re-exécute la requête originale avec le nouveau token
           return axiosInstance(originalRequest);

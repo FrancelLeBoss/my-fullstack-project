@@ -167,106 +167,161 @@ const Register = () => {
     };
 
     return (
-        <div className='flex gap-4 flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900'>
-            <h1 className='text-3xl'>Register</h1>
-            <form className='flex flex-col gap-4 min-w-[300px] lg:min-w-[400px]' onSubmit={handleSubmit}>
-                <div className='flex flex-col'>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        // onBlur est supprimé car la validation est dans useEffect
-                        className='w-full text-gray-600 dark:text-gray-400 border p-4 focus:outline-none
-                        focus:ring-1 focus:ring-primary
-                        border-gray-300 dark:border-gray-500
-                        dark:bg-gray-800'
-                        required
-                    />
-                    {invalidEmail && <span className='text-red-500 text-xs'>Invalid email address</span>}
-                    {emailTaken && !invalidEmail && <span className='text-red-500 text-xs'>Email already taken</span>}
-                </div>
-                <div className='flex flex-col'>
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        // onBlur est supprimé
-                        className='w-full text-gray-600 dark:text-gray-400 border focus:outline-none
-                        focus:ring-1 focus:ring-primary
-                        border-gray-300 dark:border-gray-500
-                        dark:bg-gray-800 px-4 py-4'
-                        required
-                    />
-                    {usernameTaken && <span className='text-red-500 text-xs'>Username already taken</span>}
-                </div>
-                <div className='relative flex flex-col'>
-                    <span className='absolute top-6 right-4 cursor-pointer' onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <FiEyeOff /> : <FiEye />}
-                    </span>
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        // onBlur est supprimé
-                        className='w-full text-gray-600 dark:text-gray-400 border p-4 focus:outline-none
-                        focus:ring-1 focus:ring-primary
-                        border-gray-300 dark:border-gray-500
-                        dark:bg-gray-800 '
-                        required
-                    />
-                    {weakPassword && (
-                        <span className='text-red-500 text-xs'>
-                            Password too weak (min 6 chars, 1 uppercase, 1 number, 1 special char)
-                        </span>
-                    )}
-                </div>
-                <div className='relative flex flex-col'>
-                    <span className='absolute top-6 right-4 cursor-pointer' onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                        {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                    </span>
-                    <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        // onBlur est supprimé
-                        className='w-full text-gray-600 dark:text-gray-400 border p-4 focus:outline-none
-                        focus:ring-1 focus:ring-primary
-                        border-gray-300 dark:border-gray-500
-                        dark:bg-gray-800'
-                        required
-                    />
-                    {passwordsMismatch && <span className='text-red-500 text-xs'>Passwords do not match</span>}
-                </div>
-                <div className='flex items-center gap-2'>
-                    <input type="checkbox" id="terms" className='text-primary w-4 h-4' required checked={policyAccepted} onChange={() => setPolicyAccepted(!policyAccepted)} />
-                    <label htmlFor="terms">I agree to the terms and conditions</label>
-                </div>
-                <div className='flex items-center gap-2'>
-                    <input type="checkbox" id="newsletter" className='text-primary w-4 h-4' checked={newsLetterSubscription} onChange={() => setNewsLetterSubscription(!newsLetterSubscription)} />
-                    <label htmlFor="newsletter">Subscribe to our newsletter</label>
-                </div>
-                <button
-                    type="submit"
-                    className='bg-primary text-white p-4 hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed'
-                    disabled={
-                        invalidEmail || weakPassword || passwordsMismatch ||
-                        usernameTaken || emailTaken || !policyAccepted ||
-                        email.length === 0 || username.length === 0 || // Ajouté pour s'assurer que les champs ne sont pas vides
-                        password.length === 0 || confirmPassword.length === 0
-                    }
-                >
-                    Register
-                </button>
-            </form>
-            <p className='text-gray-600 dark:text-gray-400'>Already have an account? <a href="/login" className='text-primary hover:text-secondary'>Login</a></p>
-            <p className='text-gray-600 dark:text-gray-400'>Or register with</p>
-            <div className='flex gap-4'>
-                <button className='p-4 bg-blue-600 hover:bg-blue-700 text-white'>Facebook</button>
-                <button className='p-4 bg-red-600 hover:bg-red-700 text-white'>Google</button>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
+            <div className="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
+                <section className="relative overflow-hidden bg-gradient-to-br from-primary to-secondary px-6 py-12 md:px-12 lg:px-16 flex items-end">
+                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.35),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(0,0,0,0.2),_transparent_30%)]" />
+                    <div className="relative max-w-xl text-white">
+                        <p className="text-xs uppercase tracking-[0.22em] font-semibold text-white/75">Join Shopsy</p>
+                        <h1 className="mt-3 text-4xl md:text-5xl font-black tracking-tight leading-tight">
+                            Create your account in a few steps
+                        </h1>
+                        <p className="mt-4 text-white/80 text-sm md:text-base leading-relaxed max-w-lg">
+                            Track your orders, save your wishlist, and enjoy a smoother shopping experience from your personal dashboard.
+                        </p>
+
+                        <div className="mt-8 grid gap-3 sm:grid-cols-2 max-w-xl">
+                            <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-4">
+                                <p className="text-sm font-semibold">Secure account</p>
+                                <p className="text-xs text-white/75 mt-1">Email verification and password checks included.</p>
+                            </div>
+                            <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 p-4">
+                                <p className="text-sm font-semibold">Fast checkout</p>
+                                <p className="text-xs text-white/75 mt-1">Save time on future purchases and orders.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="flex items-center justify-center px-6 py-10 md:px-12 lg:px-16">
+                    <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-[0_20px_55px_-34px_rgba(0,0,0,0.45)] p-6 md:p-8">
+                        <div className="mb-6">
+                            <p className="text-xs uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500 font-semibold">Registration</p>
+                            <h2 className="mt-2 text-3xl font-black tracking-tight">Register</h2>
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                Fill in your details to create your account.
+                            </p>
+                        </div>
+
+                        <form className='grid gap-4' onSubmit={handleSubmit}>
+                            <div className='grid gap-4 sm:grid-cols-2'>
+                                <div className='flex flex-col gap-2'>
+                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Email</label>
+                                    <input
+                                        type="email"
+                                        placeholder="Email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className='w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3.5 text-gray-900 dark:text-gray-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all'
+                                        required
+                                    />
+                                    {invalidEmail && <span className='text-red-500 text-xs'>Invalid email address</span>}
+                                    {emailTaken && !invalidEmail && <span className='text-red-500 text-xs'>Email already taken</span>}
+                                </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Username</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        className='w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3.5 text-gray-900 dark:text-gray-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all'
+                                        required
+                                    />
+                                    {usernameTaken && <span className='text-red-500 text-xs'>Username already taken</span>}
+                                </div>
+                            </div>
+
+                            <div className='grid gap-4 sm:grid-cols-2'>
+                                <div className='relative flex flex-col gap-2'>
+                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Password</label>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className='w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3.5 pr-12 text-gray-900 dark:text-gray-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all'
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className='absolute right-4 top-[42px] text-gray-500 hover:text-primary transition-colors'
+                                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                                    >
+                                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                                    </button>
+                                    {weakPassword && (
+                                        <span className='text-red-500 text-xs'>
+                                            Password too weak (min 6 chars, 1 uppercase, 1 number, 1 special char)
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className='relative flex flex-col gap-2'>
+                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Confirm password</label>
+                                    <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="Confirm Password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className='w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3.5 pr-12 text-gray-900 dark:text-gray-100 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all'
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className='absolute right-4 top-[42px] text-gray-500 hover:text-primary transition-colors'
+                                        aria-label={showConfirmPassword ? 'Masquer la confirmation' : 'Afficher la confirmation'}
+                                    >
+                                        {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                                    </button>
+                                    {passwordsMismatch && <span className='text-red-500 text-xs'>Passwords do not match</span>}
+                                </div>
+                            </div>
+
+                            <div className='grid gap-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 p-4'>
+                                <label className='flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
+                                    <input type="checkbox" id="terms" className='text-primary w-4 h-4 rounded border-gray-300 focus:ring-primary' required checked={policyAccepted} onChange={() => setPolicyAccepted(!policyAccepted)} />
+                                    <span>I agree to the terms and conditions</span>
+                                </label>
+                                <label className='flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
+                                    <input type="checkbox" id="newsletter" className='text-primary w-4 h-4 rounded border-gray-300 focus:ring-primary' checked={newsLetterSubscription} onChange={() => setNewsLetterSubscription(!newsLetterSubscription)} />
+                                    <span>Subscribe to our newsletter</span>
+                                </label>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className='mt-1 rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-3.5 text-lg font-semibold text-white shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+                                disabled={
+                                    invalidEmail || weakPassword || passwordsMismatch ||
+                                    usernameTaken || emailTaken || !policyAccepted ||
+                                    email.length === 0 || username.length === 0 ||
+                                    password.length === 0 || confirmPassword.length === 0
+                                }
+                            >
+                                Register
+                            </button>
+                        </form>
+
+                        <div className="mt-6 space-y-4 text-center">
+                            <p className='text-sm text-gray-600 dark:text-gray-400'>
+                                Already have an account? <a href="/login" className='font-semibold text-primary hover:text-secondary transition-colors'>Login</a>
+                            </p>
+                            <div className="flex items-center gap-4 text-xs uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+                                <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                                <span>Or register with</span>
+                                <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+                            </div>
+                            <div className='flex gap-3 justify-center'>
+                                <button className='rounded-2xl px-4 py-3 bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors'>Facebook</button>
+                                <button className='rounded-2xl px-4 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors'>Google</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     );
