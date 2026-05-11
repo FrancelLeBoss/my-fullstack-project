@@ -125,7 +125,9 @@ const CartPage: React.FC = () => {
             <button
               onClick={handleCheckout}
               disabled={loading || !items.some(item => item.checked)}
-              className="w-full mt-6 bg-primary text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+              className="w-full mt-6 bg-primary text-white py-3 rounded-xl flex items-center 
+              justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 
+              disabled:hover:scale-100"
             >
               <span>Pay with</span>
               <FaStripe className="text-3xl" />

@@ -3,6 +3,7 @@ from .views import (
     ActivateAccountView,
     RegisterView,
     CreateCheckoutSessionView,
+    stripe_webhook,
     add_to_cart,
     already_in_wishlist,
     get_top_rated_products,
@@ -78,6 +79,7 @@ urlpatterns = [
     path("logout/", logout, name="logout"),
     path("register/", RegisterView.as_view(), name="register"),
     path("create-checkout-session/", CreateCheckoutSessionView.as_view(), name="create_checkout_session"),
+    path("stripe-webhook/", stripe_webhook, name="stripe_webhook"),
     path(
         "activate/<uuid:email_verification_token>/",
         ActivateAccountView.as_view(),

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import axiosInstance from "../api/axiosInstance";
 import { OrderDetails } from "../types/Order";
 import { ProductSize, ProductVariant, ProductVariantImage } from "../types/Product";
@@ -24,6 +25,7 @@ const buildFallbackImage = (label: string) => {
 const PaymentSucceded: React.FC = () => {
   const { order_id } = useParams<{ order_id: string }>();
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const dispatch = useDispatch();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +44,22 @@ const PaymentSucceded: React.FC = () => {
   const [addressesLoading, setAddressesLoading] = useState(false);
 
   const parsedOrderId = useMemo(() => Number(order_id), [order_id]);
+
+  // Vider le panier au chargement de la page de succès
+  useEffect(() => {
+    const clearCart = async () => {
+      try {
+        await axiosInstance.get("api/cart/empty/");
+        // Vider aussi Redux cart
+        dispatch({ type: "cart/updateCart", payload: [] });
+        console.log("Panier vidé après paiement réussi");
+      } catch (err) {
+        console.error("Erreur lors du vidage du panier:", err);
+      }
+    };
+
+    clearCart();
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchOrder = async () => {

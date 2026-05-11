@@ -23,6 +23,7 @@ import Help from "./pages/Help";
 import Checkout from "./pages/Checkout";
 import CartPage from "./pages/Cart";
 import PaymentSucceded from "./pages/PaymentSucceded";
+import ShopsyLogo from "./components/ShopsyLogo";
 
 function App() {
   // Création d'une instance de QueryClient
@@ -76,6 +77,7 @@ function App() {
               }
             />
             <Route path="/category/:slug" element={<Boutique />} />
+            <Route path="/logo" element={<ShopsyLogo />} />
             <Route path="/product/:productId/:v" element={<Product />} />
             <Route path="/payment-success/:order_id" element={<PaymentSucceded />} />
             <Route path="/login" element={<Login />} />

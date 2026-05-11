@@ -1,99 +1,170 @@
 import React from 'react'
-import Image1 from '../../assets/hero/women.png'
-import Image2 from '../../assets/hero/shopping.png'
-import Image3 from '../../assets/hero/sale.png'
 import Slider from 'react-slick'
+import Image1 from '../../assets/hero/men-discount.jpg'
+import Image2 from '../../assets/hero/women-discount.jpg'
+import Image3 from '../../assets/hero/family-discount.jpg'
 
 const ImageList = [
     {
-        id:1,
-        img:Image1,
-        title:"Up to 50% off on all Men's Wear",
-        description:"Lorem Ipsum s simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. "
+        id: 1,
+        img: Image1,
+        title: "Up to 50% off on all Men's Wear",
+        description: "Upgrade your wardrobe without breaking the bank. From sharp casualwear to weekend essentials — now at half the price.",
+        badge: "Limited Time",
+        cta: "Shop Men's",
     },
     {
-        id:2,
-        img:Image2,
-        title:"30% off on all Women's Wear",
-        description:"Lorem Ipsum s simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. "
+        id: 2,
+        img: Image2,
+        title: "30% off on all Women's Wear",
+        description: "Fresh styles, unbeatable prices. From everyday looks to statement pieces. Free shipping, no minimum.",
+        badge: "New Arrivals",
+        cta: "Shop Women's",
     },
     {
-        id:3,
-        img:Image3,
-        title:"70% off on all Products Sale",
-        description:"Lorem Ipsum s simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. "
+        id: 3,
+        img: Image3,
+        title: "70% off on all Products Sale",
+        description: "Our biggest sale of the season is live. Thousands of styles, now up to 70% off. Top picks selling out fast.",
+        badge: "🔥 Hot Deal",
+        cta: "Shop the Sale",
     },
 ]
 
-const Hero = ({handleOrderPopup, message}) => {
+interface HeroProps {
+    handleOrderPopup: () => void;
+    message?: string;
+}
 
-    var settings = {
-        dots: false,
+const Hero = ({ handleOrderPopup, message }: HeroProps) => {
+
+    const settings = {
+        dots: true,
         arrows: false,
         infinite: true,
-        speed: 800,
+        speed: 900,
         slidesToScroll: 1,
         autoplay: true,
-        autoplaySpeed: 4000,
+        autoplaySpeed: 5000,
         cssEase: 'ease-in-out',
         pauseOnHover: false,
         pauseOnFocus: true,
     }
 
-  return (
-    <div className='relative overflow-hidden min-h-[550px] sm:min-h-[570px] bg-gray-100 dark:bg-gray-950
-    dark:text-white duration-200
-    flex justify-center items-center'>
-        {/* Backgroung pattern */}
-        <div className='h-[700px] w-[700px] bg-primary/40 absolute -top-1/2 
-        right-0 rotate-45 rounded-3xl -z-9'>
-
-        </div>
-        {/* Hero section */}
-        <div className='container pb-8 sm:pb-0'>
-            <Slider {... settings}>
+    return (
+        <div className="relative overflow-hidden min-h-[600px] sm:min-h-[650px] bg-white dark:bg-gray-950 dark:text-white">
+            <Slider {...settings}>
                 {ImageList.map((data) => (
-                    <div key={data.id}> 
-                    <div className='grid grid-cols-1 sm:grid-cols-2 items-center'>
-                        {/* Text content section */}
-                        <div className='flex flex-col gap-4 justify-center pt-12 sm:pt-0 text-center 
-                        sm:text-left relative z-10' key={data.id}>
-                            <h1 className='text-5xl sm:text-6xl lg:text-7xl font-bold'
-                            data-aos = 'zoom-out'
-                            data-aos-once = 'true'
-                            data-aos-duration = '500'
-                            >{data.title}</h1>
-                            <p className='text-sm'
-                                data-aos = 'fade-up'
-                                data-aos-delay = '100'
-                                data-aos-duration = '500'
-                            >{data.description}</p>
-                            <div data-aos = 'fade-up'
-                                data-aos-delay = '300'
-                                data-aos-duration = '500'>
-                                <button onClick={()=>handleOrderPopup()} className='bg-gradient-to-r from-primary to-secondary hover:scale-105
-                                    duration-200 text-white py-2 px-4 rounded-xl'
-                                    >Order now
-                                </button>
+                    <div key={data.id}>
+                        <div className="relative grid grid-cols-1 sm:grid-cols-2 min-h-[600px] sm:min-h-[650px]">
+
+                            {/* ── Colonne texte ── */}
+                            <div className="flex flex-col justify-center gap-6 px-8 sm:px-16 lg:px-24 pt-16 sm:pt-0 z-10">
+
+                                {/* Badge */}
+                                <span
+                                    className="inline-block w-fit bg-primary/20 text-secondary
+                                    text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full
+                                    dark:bg-primary/10 dark:text-primary"
+                                    data-aos="fade-down"
+                                    data-aos-duration="400"
+                                    data-aos-once="true"
+                                >
+                                    {data.badge}
+                                </span>
+
+                                {/* Titre */}
+                                <h1
+                                    className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight"
+                                    data-aos="fade-up"
+                                    data-aos-duration="500"
+                                    data-aos-once="true"
+                                >
+                                    {data.title}
+                                </h1>
+
+                                {/* Description */}
+                                <p
+                                    className="text-gray-500 dark:text-gray-400 text-base max-w-sm leading-relaxed"
+                                    data-aos="fade-up"
+                                    data-aos-delay="100"
+                                    data-aos-duration="500"
+                                    data-aos-once="true"
+                                >
+                                    {data.description}
+                                </p>
+
+                                {/* CTAs */}
+                                <div
+                                    className="flex items-center gap-4"
+                                    data-aos="fade-up"
+                                    data-aos-delay="200"
+                                    data-aos-duration="500"
+                                    data-aos-once="true"
+                                >
+                                    <button
+                                        onClick={handleOrderPopup}
+                                        className="bg-gradient-to-r from-primary to-secondary
+                                        text-white font-bold px-6 py-3 rounded-xl
+                                        hover:scale-105 active:scale-95
+                                        transition-all duration-200 shadow-md shadow-primary/30"
+                                    >
+                                        {data.cta}
+                                    </button>
+                                    <button className="text-sm font-semibold text-gray-400
+                                    hover:text-secondary dark:hover:text-primary
+                                    underline underline-offset-4 transition-colors duration-200">
+                                        View all deals →
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        {/* Image section */}
-                        <div className='order-2 sm:order-1'>
-                            <div className='relative z-10'
-                            data-aos = 'zoom-in'
-                            data-aos-once = 'true'>
-                                <img src={data.img} alt='' 
-                                className='w-[300px] h-[300px] sm:h-[450px] sm:w-[450px] sm:scale-105 lg:scale-125
-                                object-contain mx-auto'/>
+
+                            {/* ── Colonne image ── */}
+                            <div className="relative h-[350px] sm:h-full overflow-hidden">
+
+                                {/* Image pleine */}
+                                <img
+                                    src={data.img}
+                                    alt={data.title}
+                                    className="absolute inset-0 w-full h-full object-cover object-top"
+                                    data-aos="zoom-in"
+                                    data-aos-duration="600"
+                                    data-aos-once="true"
+                                />
+
+                                {/* Dégradé gauche */}
+                                <div className="absolute inset-0 bg-gradient-to-r
+                                from-white dark:from-gray-950
+                                via-white/30 dark:via-gray-950/30
+                                to-transparent" />
+
+                                {/* Badge prix flottant */}
+                                <div
+                                    className="absolute top-8 right-8 bg-white dark:bg-gray-800
+                                    rounded-2xl shadow-xl shadow-primary/20 px-4 py-3 text-center"
+                                    data-aos="fade-left"
+                                    data-aos-delay="300"
+                                    data-aos-duration="500"
+                                    data-aos-once="true"
+                                >
+                                    <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">Sale</p>
+                                    <p className="text-2xl font-black text-primary">
+                                        {data.title.match(/\d+%/)?.[0]}
+                                    </p>
+                                    <p className="text-xs text-secondary font-semibold">off</p>
+                                </div>
+
+                                {/* Accent décoratif coin bas gauche */}
+                                <div className="absolute bottom-0 left-0 w-32 h-32
+                                bg-gradient-to-tr from-primary/20 to-transparent rounded-tr-full" />
                             </div>
+
                         </div>
                     </div>
-                </div>
-                ) )}
+                ))}
             </Slider>
         </div>
-    </div>
-  )
+    )
 }
 
 export default Hero

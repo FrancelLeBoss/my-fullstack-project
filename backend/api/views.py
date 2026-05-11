@@ -2,7 +2,9 @@ from datetime import timezone
 from django.utils import timezone
 from decimal import Decimal
 import stripe
+import json
 from django.conf import settings
+from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
@@ -48,6 +50,116 @@ def generate_verification_code():
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+# ===== EMAIL DE CONFIRMATION =====
+def send_order_confirmation_email(order):
+    """
+    Envoie un email de confirmation de commande à l'utilisateur.
+    """
+    try:
+        user = order.user
+        subject = f"Commande confirmée #{order.id} - Shopsy"
+        
+        # Construire le détail de la commande
+        items_detail = "\n".join([
+            f"  • {item.variant.product.title} ({item.variant.color}) x{item.quantity} @ ${item.price} CAD"
+            for item in order.items.all()
+        ])
+        
+        message = f"""
+Bonjour {user.first_name or user.username},
+
+Merci pour votre achat! Votre commande a été confirmée.
+
+--- Détails de la commande ---
+Numéro: {order.id}
+Montant total: ${order.total_price} CAD
+Statut: {order.status}
+
+Produits:
+{items_detail}
+
+Vous pouvez consulter votre commande à tout moment dans votre profil.
+
+Merci de votre confiance!
+Shopsy Team
+        """
+        
+        from_email = settings.DEFAULT_FROM_EMAIL
+        send_mail(
+            subject,
+            message,
+            from_email,
+            [user.email],
+            fail_silently=False
+        )
+        print(f"Email de confirmation envoyé à {user.email} pour la commande {order.id}")
+    except Exception as e:
+        print(f"Erreur lors de l'envoi de l'email de confirmation: {e}")
+
+# ===== WEBHOOK STRIPE =====
+@csrf_exempt
+@api_view(["POST"])
+def stripe_webhook(request):
+    """
+    Webhook endpoint pour les événements Stripe.
+    Écoute checkout.session.completed et met à jour l'ordre.
+    """
+    webhook_secret = settings.STRIPE_WEBHOOK_SECRET
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+    
+    # Lire le body brut (important pour la vérification de signature)
+    payload = request.body
+    
+    if not sig_header or not webhook_secret:
+        return Response({"error": "Missing signature or webhook secret"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Vérifier la signature Stripe
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, webhook_secret
+        )
+    except ValueError as e:
+        # Payload invalide
+        print(f"Webhook payload invalide: {e}")
+        return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+    except stripe.error.SignatureVerificationError as e:
+        # Signature invalide
+        print(f"Signature Stripe invalide: {e}")
+        return Response({"error": "Invalid signature"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Traiter l'événement
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        order_id = session.get("metadata", {}).get("order_id")
+        
+        if not order_id:
+            print("Webhook: order_id manquant dans les métadonnées")
+            return Response({"error": "Missing order_id"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            order = Order.objects.get(id=order_id)
+            # Mettre à jour l'ordre comme payé
+            order.is_paid = True
+            order.status = "confirmed"
+            order.updated_at = timezone.now()
+            order.save()
+            print(f"Webhook: Commande {order_id} marquée comme payée")
+            
+            # Vider le panier de l'utilisateur après paiement réussi
+            user = order.user
+            Cart.objects.filter(user=user).delete()
+            print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
+            
+            # Envoyer l'email de confirmation
+            send_order_confirmation_email(order)
+            
+        except Order.DoesNotExist:
+            print(f"Webhook: Commande {order_id} introuvable")
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Retourner 200 OK pour confirmer la réception au webhook Stripe
+    return Response({"status": "success"}, status=status.HTTP_200_OK)
+
 class CreateCheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated] # L'utilisateur doit être connecté
 
@@ -77,7 +189,7 @@ class CreateCheckoutSessionView(APIView):
                 size = ProductVariantSize.objects.get(id=item['size_id'])
                 qty = int(item['qty'])
 
-                # Création de l'item de commande lié à ton modèle
+                # Création de l'item de commande lié au modèle
                 OrderItem.objects.create(
                     order=order,
                     variant=variant,
@@ -114,7 +226,7 @@ class CreateCheckoutSessionView(APIView):
                 payment_method_types=['card'],
                 line_items=line_items,
                 mode='payment',
-                # URLs de redirection (à ajuster selon tes routes React)
+                # URLs de redirection après paiement réussi ou annulé
                 success_url=f"{settings.FRONTEND_URL}payment-success/{order.id}",
                 cancel_url=f"{settings.FRONTEND_URL}cart",
                 # On passe l'ID de la commande en métadonnées pour le Webhook plus tard
@@ -123,13 +235,22 @@ class CreateCheckoutSessionView(APIView):
                 }
             )
 
-            # 6. Retourner l'URL Stripe au frontend
-            order.is_paid = True
+            # 6. Retourner l'URL Stripe au frontend pour redirection
             order.stripe_payment_intent_id = checkout_session.id
             order.status = 'processing'
             order.updated_at = timezone.now()
             order.save()
-            return Response({'url': checkout_session.url, 'checkout_session': checkout_session}, status=status.HTTP_200_OK)
+
+            # Return only JSON-serializable fields from the Stripe session
+            session_data = {
+                'id': checkout_session.id,
+                'url': getattr(checkout_session, 'url', None),
+                'amount_total': getattr(checkout_session, 'amount_total', None),
+                'currency': getattr(checkout_session, 'currency', None),
+                'payment_status': getattr(checkout_session, 'payment_status', None),
+            }
+
+            return Response({'url': session_data['url'], 'session': session_data}, status=status.HTTP_200_OK)
 
         except ProductVariant.DoesNotExist:
             return Response({'error': 'Un produit est introuvable'}, status=status.HTTP_404_NOT_FOUND)

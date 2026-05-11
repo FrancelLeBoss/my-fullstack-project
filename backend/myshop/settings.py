@@ -9,6 +9,7 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173/").rstrip("/") + "/"
 BACKEND_URL = os.getenv("BACKEND_URL", os.getenv("RENDER_EXTERNAL_URL", "")).strip()
 
