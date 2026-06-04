@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django import forms
+from decimal import Decimal
 import uuid
 
 class User(AbstractUser):
@@ -196,26 +197,52 @@ class ProductImage(models.Model):
 class Order(models.Model):
     """Modèle pour les commandes passées par les utilisateurs."""
 
+    PAYMENT_STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("paid", "Paid"),
+        ("failed", "Failed"),
+        ("refunded", "Refunded"),
+    ]
+
+    FULFILLMENT_STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("preparing", "Preparing"),
+        ("shipped", "Shipped"),
+        ("delivered", "Delivered"),
+        ("cancelled", "Cancelled"),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    status = models.CharField(
+    payment_status = models.CharField(
         max_length=50,
-        choices=[
-            ("pending", "Pending"),
-            ("processing", "Processing"),
-            ("shipped", "Shipped"),
-            ("delivered", "Delivered"),
-            ("cancelled", "Cancelled"),
-        ],
+        choices=PAYMENT_STATUS_CHOICES,
+        default="pending",
+    )
+    fulfillment_status = models.CharField(
+        max_length=50,
+        choices=FULFILLMENT_STATUS_CHOICES,
         default="pending",
     )
     stripe_payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
-    is_paid = models.BooleanField(default=False)
+
+    def get_items_subtotal(self):
+        return sum((item.line_total for item in self.items.all()), Decimal("0.00"))
+
+    def recalculate_total(self, tax_rate=Decimal("0.15"), shipping_threshold=Decimal("50.00"), shipping_fee=Decimal("10.00")):
+        subtotal = self.get_items_subtotal()
+        tax_amount = subtotal * tax_rate
+        shipping_amount = shipping_fee if subtotal > Decimal("0.00") and subtotal < shipping_threshold else Decimal("0.00")
+        self.total_price = subtotal + tax_amount + shipping_amount
+        return self.total_price
 
     def __str__(self):
-        return f"Order #{self.id} by {self.user.username} - {self.status}"
+        return (
+            f"Order #{self.id} by {self.user.username} - "
+            f"payment:{self.payment_status} / fulfillment:{self.fulfillment_status}"
+        )
 
 class OrderItem(models.Model):
     """Modèle pour les articles de commande."""
@@ -232,6 +259,10 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.variant} (Size: {self.size})"
+
+    @property
+    def line_total(self):
+        return self.price * self.quantity
 
 class Rating(models.Model):
     """Avis des utilisateurs avec une note et un commentaire."""

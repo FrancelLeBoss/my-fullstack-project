@@ -70,9 +70,9 @@ const PaymentSucceded: React.FC = () => {
       }
 
       try {
-        const response = await axiosInstance.get<OrderDetails[]>("api/orders/");
-        const currentOrder = response.data.find((o) => o.id === parsedOrderId) || null;
-
+        const response = await axiosInstance.get<OrderDetails>(`api/orders/${parsedOrderId}/`);
+        const currentOrder = response.data;
+        console.log("Détails de la commande récupérés:", currentOrder);
         if (!currentOrder) {
           setError("Commande introuvable dans votre historique.");
         } else {
@@ -208,31 +208,45 @@ const PaymentSucceded: React.FC = () => {
     return addresses.find((a) => a.is_default) || addresses[0];
   }, [addresses]);
 
-  const orderSteps = [
-    "Commande payee",
-    "Preparation",
-    "En cours de livraison",
-    "Livre",
-  ];
+  const orderSteps = ["En attente", "Preparation", "Expediee", "Livree"];
 
-  const getProgressIndex = (status?: string) => {
-    switch (status) {
+  const getProgressIndex = (fulfillmentStatus?: string) => {
+    switch (fulfillmentStatus) {
       case "pending":
         return 0;
-      case "processing":
+      case "preparing":
         return 1;
       case "shipped":
         return 2;
       case "delivered":
         return 3;
+      case "cancelled":
+        return 0;
       default:
         return 0;
     }
   };
 
-  const progressIndex = getProgressIndex(order?.status);
+  const paymentStatus = order?.payment_status || "pending";
+  const fulfillmentStatus = order?.fulfillment_status || "pending";
+  const progressIndex = getProgressIndex(fulfillmentStatus);
   const progressPercent = (progressIndex / (orderSteps.length - 1)) * 100;
-  const isCancelled = order?.status === "cancelled";
+  const isCancelled = fulfillmentStatus === "cancelled";
+
+  const paymentStatusLabel: Record<string, string> = {
+    pending: "En attente",
+    paid: "Payee",
+    failed: "Echouee",
+    refunded: "Remboursee",
+  };
+
+  const fulfillmentStatusLabel: Record<string, string> = {
+    pending: "En attente",
+    preparing: "Preparation",
+    shipped: "Expediee",
+    delivered: "Livree",
+    cancelled: "Annulee",
+  };
 
   if (loading) {
     return (
@@ -295,8 +309,14 @@ const PaymentSucceded: React.FC = () => {
                 <p className="text-xl font-black">{Number(order?.total_price || 0).toFixed(2)} CAD</p>
               </div>
               <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-                <p className="text-xs uppercase text-gray-500 mb-1">Statut</p>
-                <p className="text-sm font-semibold uppercase">{order?.status || "processing"}</p>
+                <p className="text-xs uppercase text-gray-500 mb-1">Paiement</p>
+                <p className="text-sm font-semibold uppercase">{paymentStatusLabel[paymentStatus] || paymentStatus}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+                <p className="text-xs uppercase text-gray-500 mb-1">Livraison</p>
+                <p className="text-sm font-semibold uppercase">
+                  {fulfillmentStatusLabel[fulfillmentStatus] || fulfillmentStatus}
+                </p>
               </div>
               <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
                 <p className="text-xs uppercase text-gray-500 mb-1">Date</p>
@@ -421,11 +441,13 @@ const PaymentSucceded: React.FC = () => {
             </div>
 
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 mb-6">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-1">
                 <h3 className="text-sm font-bold uppercase tracking-wide">Suivi de commande</h3>
-                <span className="text-xs text-gray-500">Statut: {order?.status || "pending"}</span>
+                <span className="text-xs font-bold">
+                  Paiement: {paymentStatusLabel[paymentStatus] || paymentStatus}
+                </span>
               </div>
-
+              <div className="text-xs text-gray-500 mb-2">Livraison</div>  
               {isCancelled ? (
                 <p className="text-sm text-red-600 dark:text-red-400 font-medium">
                   Cette commande a ete annulee. Contactez le support si besoin d&apos;assistance.

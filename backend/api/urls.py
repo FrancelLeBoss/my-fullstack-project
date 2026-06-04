@@ -38,6 +38,7 @@ from .views import (
     user_me,
     best_rated,
     get_user_orders,
+    get_user_specific_order,
     set_profile,
     get_user_addresses,
 )
@@ -114,4 +115,5 @@ urlpatterns = [
     path("ratings/best_rated/", best_rated, name="best_rated"),
 
     path("orders/", get_user_orders, name="get_user_orders"),
+    path("orders/<int:order_id>/", get_user_specific_order, name="get_user_order_detail"),
 ]

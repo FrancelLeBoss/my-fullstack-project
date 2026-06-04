@@ -4,9 +4,9 @@ services:
     image: postgres:15
     # Définition des variables d'environnement pour la base de données
     environment:
-      POSTGRES_DB: my_shop_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: francelKazakh*2022
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     # Mappage des ports: le port 5432 du conteneur est exposé sur le port 5432 de la machine hôte
     ports:
       - "5433:5432"
@@ -25,7 +25,7 @@ services:
       - ./backend:/app
     # Variables d'environnement pour que le backend puisse se connecter à la base de données
     environment:
-      DATABASE_URL: "postgres://postgres:francelKazakh*2022@db:5432/my_shop_db"
+      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}"
     env_file:
       - ./backend/.env
     # Dépendance sur le service 'db'. Docker s'assurera que 'db' est démarré avant de lancer 'backend'.

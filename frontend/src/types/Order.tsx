@@ -20,7 +20,8 @@ export interface orderItem {
 export interface OrderDetails {
   id: number;
   total_price: number;
-  status: string;
+  payment_status: string;
+  fulfillment_status: string;
   created_at: string;
   updated_at: string;
   is_paid?: boolean;

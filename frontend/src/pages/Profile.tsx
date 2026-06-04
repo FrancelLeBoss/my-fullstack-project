@@ -3,13 +3,13 @@ import { RootState } from '../redux/store';
 import { useSelector } from 'react-redux';
 import useCart from '../hooks/useCart';
 import axiosInstance from '../api/axiosInstance';
-import { orderItem } from '../types/Order';
+import { OrderDetails } from '../types/Order';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const user = useSelector((s: RootState) => s.user.user);
   const addresses = useSelector((s: RootState) => s.user.addresses);
-  const [orders, setOrders] = useState<orderItem[]>([]);
+    const [orders, setOrders] = useState<OrderDetails[]>([]);
   const cart = useSelector(
       (state: RootState) => (state.cart as RootState["cart"]).items
     );
@@ -19,12 +19,12 @@ const Profile = () => {
     const { imageUrl} = useCart();
 
     const getUserOrders = async (user: any) => {
-      try {
-        const response = await axiosInstance.get(`/api/orders`, {
-          headers: { Authorization: `Bearer ${user.accessToken}` },
-        });
-        console.log("User Orders:", response.data);
-        return response.data as orderItem[];
+            try {
+                const response = await axiosInstance.get(`/api/orders`, {
+                    headers: { Authorization: `Bearer ${user.accessToken}` },
+                });
+                console.log("User Orders:", response.data);
+                return response.data as OrderDetails[];
       } catch (error) {
         console.error("Error fetching user orders:", error);
         return [];
@@ -37,6 +37,21 @@ const Profile = () => {
       });
     }
   }, [user]);
+
+    const paymentStatusLabel: Record<string, string> = {
+        pending: "En attente",
+        paid: "Payée",
+        failed: "Échouée",
+        refunded: "Remboursée",
+    };
+
+    const fulfillmentStatusLabel: Record<string, string> = {
+        pending: "En attente",
+        preparing: "Préparation",
+        shipped: "Expédiée",
+        delivered: "Livrée",
+        cancelled: "Annulée",
+    };
 
   return (
     <div className="bg-gray-50 min-h-screen pb-8 dark:bg-gray-950 text-black dark:text-white">
@@ -232,11 +247,11 @@ const Profile = () => {
                                                     })}
                                                 </td>
                                                 <td className="py-6 px-2 italic">
-                                                    {order.is_paid ? "Payée" : "En attente"}
+                                                    {paymentStatusLabel[order.payment_status || 'pending'] || (order.payment_status ?? 'En attente')}
                                                 </td>
                                                 <td className="py-6 px-2 uppercase text-xs font-semibold">
-                                                    <span className={`px-2 py-1 rounded-full ${order.status === 'delivered' ? 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/20' : 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/20'}`}>
-                                                        {order.status}
+                                                    <span className={`px-2 py-1 rounded-full ${order.fulfillment_status === 'delivered' ? 'text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/20' : order.fulfillment_status === 'cancelled' ? 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/20' : 'text-orange-700 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/20'}`}>
+                                                        {fulfillmentStatusLabel[order.fulfillment_status || 'pending'] || (order.fulfillment_status ?? 'En attente')}
                                                     </span>
                                                 </td>
                                                 <td className="py-6 px-2 text-right font-black tracking-tight">

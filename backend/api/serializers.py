@@ -157,9 +157,11 @@ class ProductVariantSizeSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     """Serializer pour les articles de commande."""
 
+    line_total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
     class Meta:
         model = OrderItem
-        fields = ["id", "order", "variant", "quantity", "size", "price"]
+        fields = ["id", "order", "variant", "quantity", "size", "price", "line_total"]
 
 class OrderSerializer(serializers.ModelSerializer):
     """Serializer pour les commandes."""
@@ -174,7 +176,9 @@ class OrderSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "total_price",
-            "status",
+            "payment_status",
+            "fulfillment_status",
+            "stripe_payment_intent_id",
             "items",
         ]   
 

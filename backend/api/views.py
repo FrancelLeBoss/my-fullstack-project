@@ -73,7 +73,8 @@ Merci pour votre achat! Votre commande a été confirmée.
 --- Détails de la commande ---
 Numéro: {order.id}
 Montant total: ${order.total_price} CAD
-Statut: {order.status}
+Paiement: {order.payment_status}
+Livraison: {order.fulfillment_status}
 
 Produits:
 {items_detail}
@@ -139,8 +140,8 @@ def stripe_webhook(request):
         try:
             order = Order.objects.get(id=order_id)
             # Mettre à jour l'ordre comme payé
-            order.is_paid = True
-            order.status = "confirmed"
+            order.payment_status = "paid"
+            order.fulfillment_status = "preparing"
             order.updated_at = timezone.now()
             order.save()
             print(f"Webhook: Commande {order_id} marquée comme payée")
@@ -175,13 +176,12 @@ class CreateCheckoutSessionView(APIView):
             # 2. Créer la commande (Order) initialement
             order = Order.objects.create(
                 user=request.user,
-                status='pending',
+                payment_status='pending',
+                fulfillment_status='pending',
                 created_at=timezone.now(),
-                is_paid=False
             )
 
             line_items = []
-            final_total_price = 0
 
             # 3. Boucler sur les items pour créer les OrderItems et préparer Stripe
             for item in cart_items:
@@ -201,7 +201,7 @@ class CreateCheckoutSessionView(APIView):
                 # Préparation de l'objet pour Stripe
                 line_items.append({
                     'price_data': {
-                        'currency': 'cad', # Dollars canadiens
+                        'currency': 'cad', # Devrait idéalement être dynamique ou basé sur la configuration du produit
                         'product_data': {
                             'name': f"{variant.product.title}",
                             'description': f"Couleur: {variant.color} - Taille: {size.size}",
@@ -211,13 +211,8 @@ class CreateCheckoutSessionView(APIView):
                     'quantity': qty,
                 })
                 
-                final_total_price += variant.price * qty
-
-            # 4. Mettre à jour le prix total final dans la commande
-            taxe_rate = Decimal('0.15')
-            frais_port = Decimal('10') if final_total_price < 50 and final_total_price > 0 else Decimal('0')
-
-            order.total_price = (final_total_price * taxe_rate) + frais_port + final_total_price
+            # 4. Mettre à jour le prix total final dans la commande à partir des OrderItems
+            order.recalculate_total()
             order.updated_at = timezone.now()
             order.save()
 
@@ -237,7 +232,6 @@ class CreateCheckoutSessionView(APIView):
 
             # 6. Retourner l'URL Stripe au frontend pour redirection
             order.stripe_payment_intent_id = checkout_session.id
-            order.status = 'processing'
             order.updated_at = timezone.now()
             order.save()
 
@@ -265,6 +259,18 @@ def get_user_orders(request):
     orders = Order.objects.filter(user=user).prefetch_related("items__variant__product").order_by('-created_at')
     serializer = OrderSerializer(orders, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_specific_order(request, order_id):
+    """Retourne les détails d’une commande spécifique pour l’utilisateur connecté."""
+    user = request.user
+    try:
+        order = Order.objects.prefetch_related("items__variant__product").get(id=order_id, user=user)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # Create your views here.
 @api_view(["GET"])

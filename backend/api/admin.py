@@ -61,9 +61,16 @@ class RatingAdmin(admin.ModelAdmin):
     search_fields = ("product__title", "user")
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "total_price", "status", "created_at")
+    list_display = (
+        "id",
+        "user",
+        "total_price",
+        "payment_status",
+        "fulfillment_status",
+        "created_at",
+    )
     search_fields = ("user__username", "id")
-    list_filter = ("status", "created_at")
+    list_filter = ("payment_status", "fulfillment_status", "created_at")
     raw_id_fields = ("user",)
     autocomplete_fields = ("user",) 
 
