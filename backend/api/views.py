@@ -172,7 +172,13 @@ def stripe_webhook(request):
     except Exception as e:
         print(f"Webhook Stripe erreur inattendue: {e}")
         print(traceback.format_exc())
-        return Response({"error": "Webhook processing failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {
+                "error": "Webhook processing failed",
+                "detail": str(e),
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 class CreateCheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated] # L'utilisateur doit être connecté
