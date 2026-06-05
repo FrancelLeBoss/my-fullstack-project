@@ -192,17 +192,19 @@ def stripe_webhook(request):
                 except Exception:
                     metadata_dict = repr(metadata)
                 print(f"Webhook debug: session type={type(session)}, metadata type={type(metadata)}, metadata={metadata_dict}")
+                print(f"was_already_paid: {was_already_paid}, payment_status: {order.payment_status}")
 
-                # Éviter les blocages Stripe: l'email part en arrière-plan.
                 if not was_already_paid:
+                    print("Démarrage thread email...")
                     email_thread = threading.Thread(
                         target=send_order_confirmation_email,
                         args=(order.id,),
                         daemon=True,
                     )
                     email_thread.start()
+                    print("Thread email démarré")
                 else:
-                    print(f"Webhook: commande {order_id_int} déjà payée, email non renvoyé")
+                    print(f"Commande {order_id_int} déjà payée, email non renvoyé")
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
