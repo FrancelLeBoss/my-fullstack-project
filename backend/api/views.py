@@ -121,14 +121,29 @@ def stripe_webhook(request):
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
 
-            # Safe access to metadata: session can be a StripeObject or dict
-            metadata = None
-            try:
-                # Prefer dict-like access when available
-                metadata = session.get("metadata")
-            except Exception:
-                metadata = getattr(session, "metadata", None)
-            metadata = metadata or {}
+            # Stripe peut renvoyer un dict ou un StripeObject selon le contexte SDK.
+            # Ce helper évite les AttributeError sur ".get".
+            def safe_get(obj, key, default=None):
+                if obj is None:
+                    return default
+                if isinstance(obj, dict):
+                    return obj.get(key, default)
+                try:
+                    return obj[key]
+                except Exception:
+                    pass
+                return getattr(obj, key, default)
+
+            metadata_raw = safe_get(session, "metadata", {}) or {}
+            if isinstance(metadata_raw, dict):
+                metadata = metadata_raw
+            else:
+                try:
+                    metadata = dict(metadata_raw)
+                except Exception:
+                    to_dict = getattr(metadata_raw, "to_dict", None)
+                    metadata = to_dict() if callable(to_dict) else {}
+
             order_id = metadata.get("order_id")
 
             if not order_id:
@@ -145,7 +160,10 @@ def stripe_webhook(request):
                 order = Order.objects.get(id=order_id_int)
                 order.payment_status = "paid"
                 order.fulfillment_status = "preparing"
-                order.save(update_fields=["payment_status", "fulfillment_status", "updated_at"])
+                payment_intent = safe_get(session, "payment_intent")
+                if payment_intent:
+                    order.stripe_payment_intent_id = str(payment_intent)
+                order.save(update_fields=["payment_status", "fulfillment_status", "stripe_payment_intent_id", "updated_at"])
                 print(f"Webhook: Commande {order_id_int} marquée comme payée")
 
                 user = order.user
