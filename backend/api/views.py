@@ -53,20 +53,19 @@ def generate_verification_code():
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # ===== EMAIL DE CONFIRMATION =====
-def send_order_confirmation_email(order):
-    """
-    Envoie un email de confirmation de commande à l'utilisateur.
-    """
+def send_order_confirmation_email(order_id):
     try:
+        # Re-fetch l'ordre dans le thread avec sa propre connexion DB
+        order = Order.objects.prefetch_related("items__variant__product").get(id=order_id)
         user = order.user
+
         subject = f"Commande confirmée #{order.id} - Shopsy"
-        
-        # Construire le détail de la commande
+
         items_detail = "\n".join([
             f"  • {item.variant.product.title} ({item.variant.color}) x{item.quantity} @ ${item.price} CAD"
             for item in order.items.all()
         ])
-        
+
         message = f"""
 Bonjour {user.first_name or user.username},
 
@@ -86,17 +85,17 @@ Vous pouvez consulter votre commande à tout moment dans votre profil.
 Merci de votre confiance!
 Shopsy Team
         """
-        
-        from_email = settings.DEFAULT_FROM_EMAIL
+
         send_mail(
             subject,
             message,
-            from_email,
+            settings.DEFAULT_FROM_EMAIL,
             [user.email],
-            fail_silently=False
+            fail_silently=False,
         )
         print(f"Email de confirmation envoyé à {user.email} pour la commande {order.id}")
         return True
+
     except Exception as e:
         print(f"Erreur lors de l'envoi de l'email de confirmation: {e}")
         print(traceback.format_exc())
@@ -194,7 +193,7 @@ def stripe_webhook(request):
                 if not was_already_paid:
                     email_thread = threading.Thread(
                         target=send_order_confirmation_email,
-                        args=(order,),
+                        args=(order.id,),
                         daemon=True,
                     )
                     email_thread.start()
