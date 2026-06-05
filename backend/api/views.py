@@ -42,6 +42,7 @@ from django.http import HttpResponseRedirect
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+import traceback
 
 
 def generate_verification_code():
@@ -105,61 +106,73 @@ def stripe_webhook(request):
     Webhook endpoint pour les événements Stripe.
     Écoute checkout.session.completed et met à jour l'ordre.
     """
-    webhook_secret = settings.STRIPE_WEBHOOK_SECRET
-    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-    
-    # Lire le body brut (important pour la vérification de signature)
-    payload = request.body
-    
-    if not sig_header or not webhook_secret:
-        return Response({"error": "Missing signature or webhook secret"}, status=status.HTTP_400_BAD_REQUEST)
-    
     try:
+        webhook_secret = settings.STRIPE_WEBHOOK_SECRET
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+        # Lire le body brut (important pour la vérification de signature)
+        payload = request.body
+
+        if not sig_header or not webhook_secret:
+            return Response({"error": "Missing signature or webhook secret"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Vérifier la signature Stripe
         event = stripe.Webhook.construct_event(
             payload, sig_header, webhook_secret
         )
+
+        # Traiter l'événement
+        if event["type"] == "checkout.session.completed":
+            session = event["data"]["object"]
+            order_id = session.get("metadata", {}).get("order_id")
+
+            if not order_id:
+                print("Webhook: order_id manquant dans les métadonnées")
+                return Response({"error": "Missing order_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                order_id_int = int(order_id)
+            except (TypeError, ValueError):
+                print(f"Webhook: order_id invalide dans les métadonnées: {order_id!r}")
+                return Response({"error": "Invalid order_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                order = Order.objects.get(id=order_id_int)
+                # Mettre à jour l'ordre comme payé
+                order.payment_status = "paid"
+                order.fulfillment_status = "preparing"
+                order.save(update_fields=["payment_status", "fulfillment_status", "updated_at"])
+                print(f"Webhook: Commande {order_id_int} marquée comme payée")
+
+                # Vider le panier de l'utilisateur après paiement réussi
+                user = order.user
+                Cart.objects.filter(user=user).delete()
+                print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
+
+                # Envoyer l'email de confirmation
+                send_order_confirmation_email(order)
+
+            except Order.DoesNotExist:
+                print(f"Webhook: Commande {order_id_int} introuvable")
+                return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Retourner 200 OK pour confirmer la réception au webhook Stripe
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
+
     except ValueError as e:
         # Payload invalide
         print(f"Webhook payload invalide: {e}")
+        print(traceback.format_exc())
         return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
     except stripe.error.SignatureVerificationError as e:
         # Signature invalide
         print(f"Signature Stripe invalide: {e}")
+        print(traceback.format_exc())
         return Response({"error": "Invalid signature"}, status=status.HTTP_401_UNAUTHORIZED)
-    
-    # Traiter l'événement
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        order_id = session.get("metadata", {}).get("order_id")
-        
-        if not order_id:
-            print("Webhook: order_id manquant dans les métadonnées")
-            return Response({"error": "Missing order_id"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            order = Order.objects.get(id=order_id)
-            # Mettre à jour l'ordre comme payé
-            order.payment_status = "paid"
-            order.fulfillment_status = "preparing"
-            order.updated_at = timezone.now()
-            order.save()
-            print(f"Webhook: Commande {order_id} marquée comme payée")
-            
-            # Vider le panier de l'utilisateur après paiement réussi
-            user = order.user
-            Cart.objects.filter(user=user).delete()
-            print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
-            
-            # Envoyer l'email de confirmation
-            send_order_confirmation_email(order)
-            
-        except Order.DoesNotExist:
-            print(f"Webhook: Commande {order_id} introuvable")
-            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    # Retourner 200 OK pour confirmer la réception au webhook Stripe
-    return Response({"status": "success"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Webhook Stripe erreur inattendue: {e}")
+        print(traceback.format_exc())
+        return Response({"error": "Webhook processing failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CreateCheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated] # L'utilisateur doit être connecté
