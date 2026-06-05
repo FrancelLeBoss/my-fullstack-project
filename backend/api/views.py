@@ -55,14 +55,9 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 # ===== EMAIL DE CONFIRMATION =====
 def send_order_confirmation_email(order_id):
     try:
-        print(f"[EMAIL] Tentative envoi pour commande {order_id}")
-        print(f"[EMAIL] Backend: {settings.EMAIL_BACKEND}")
-        print(f"[EMAIL] Host user: {settings.EMAIL_HOST_USER}")
-
+        # Re-fetch l'ordre dans le thread avec sa propre connexion DB
         order = Order.objects.prefetch_related("items__variant__product").get(id=order_id)
         user = order.user
-
-        print(f"[EMAIL] Destinataire: {user.email}")
 
         subject = f"Commande confirmée #{order.id} - Shopsy"
 
@@ -98,13 +93,14 @@ Shopsy Team
             [user.email],
             fail_silently=False,
         )
-        print(f"[EMAIL] ✅ Email envoyé à {user.email} pour la commande {order.id}")
+        print(f"Email de confirmation envoyé à {user.email} pour la commande {order.id}")
         return True
 
     except Exception as e:
-        print(f"[EMAIL] ERREUR: {type(e).__name__}: {e}")
+        print(f"Erreur lors de l'envoi de l'email de confirmation: {e}")
         print(traceback.format_exc())
         return False
+
 # ===== WEBHOOK STRIPE =====
 @csrf_exempt
 @api_view(["POST"])
@@ -192,19 +188,17 @@ def stripe_webhook(request):
                 except Exception:
                     metadata_dict = repr(metadata)
                 print(f"Webhook debug: session type={type(session)}, metadata type={type(metadata)}, metadata={metadata_dict}")
-                print(f"was_already_paid: {was_already_paid}, payment_status: {order.payment_status}")
 
+                # Éviter les blocages Stripe: l'email part en arrière-plan.
                 if not was_already_paid:
-                    print("Démarrage thread email...")
                     email_thread = threading.Thread(
                         target=send_order_confirmation_email,
                         args=(order.id,),
-                        daemon=True,
+                        # daemon=True,
                     )
                     email_thread.start()
-                    print("Thread email démarré")
                 else:
-                    print(f"Commande {order_id_int} déjà payée, email non renvoyé")
+                    print(f"Webhook: commande {order_id_int} déjà payée, email non renvoyé")
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
