@@ -121,8 +121,14 @@ def stripe_webhook(request):
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
 
-            # ✅ Accès dict direct
-            metadata = session.get("metadata") or {}
+            # Safe access to metadata: session can be a StripeObject or dict
+            metadata = None
+            try:
+                # Prefer dict-like access when available
+                metadata = session.get("metadata")
+            except Exception:
+                metadata = getattr(session, "metadata", None)
+            metadata = metadata or {}
             order_id = metadata.get("order_id")
 
             if not order_id:
@@ -146,7 +152,22 @@ def stripe_webhook(request):
                 Cart.objects.filter(user=user).delete()
                 print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
 
-                send_order_confirmation_email(order)
+                # Debugging: log metadata type/content to identify prod shape
+                try:
+                    try:
+                        metadata_dict = dict(metadata)
+                    except Exception:
+                        metadata_dict = getattr(metadata, "to_dict", lambda: repr(metadata))()
+                except Exception:
+                    metadata_dict = repr(metadata)
+                print(f"Webhook debug: session type={type(session)}, metadata type={type(metadata)}, metadata={metadata_dict}")
+
+                # Envoyer l'email de confirmation (ne doit pas faire échouer le webhook)
+                try:
+                    send_order_confirmation_email(order)
+                except Exception as email_exc:
+                    print(f"Webhook debug: email send failed: {email_exc}")
+                    print(traceback.format_exc())
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
