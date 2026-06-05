@@ -109,22 +109,20 @@ def stripe_webhook(request):
     try:
         webhook_secret = settings.STRIPE_WEBHOOK_SECRET
         sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-
-        # Lire le body brut (important pour la vérification de signature)
         payload = request.body
 
         if not sig_header or not webhook_secret:
             return Response({"error": "Missing signature or webhook secret"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier la signature Stripe
         event = stripe.Webhook.construct_event(
             payload, sig_header, webhook_secret
         )
 
-        # Traiter l'événement
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
-            metadata = getattr(session, "metadata", None) or {}
+
+            # ✅ Accès dict direct
+            metadata = session.get("metadata") or {}
             order_id = metadata.get("order_id")
 
             if not order_id:
@@ -139,34 +137,28 @@ def stripe_webhook(request):
 
             try:
                 order = Order.objects.get(id=order_id_int)
-                # Mettre à jour l'ordre comme payé
                 order.payment_status = "paid"
                 order.fulfillment_status = "preparing"
                 order.save(update_fields=["payment_status", "fulfillment_status", "updated_at"])
                 print(f"Webhook: Commande {order_id_int} marquée comme payée")
 
-                # Vider le panier de l'utilisateur après paiement réussi
                 user = order.user
                 Cart.objects.filter(user=user).delete()
                 print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
 
-                # Envoyer l'email de confirmation
                 send_order_confirmation_email(order)
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
                 return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Retourner 200 OK pour confirmer la réception au webhook Stripe
         return Response({"status": "success"}, status=status.HTTP_200_OK)
 
     except ValueError as e:
-        # Payload invalide
         print(f"Webhook payload invalide: {e}")
         print(traceback.format_exc())
         return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
     except stripe.error.SignatureVerificationError as e:
-        # Signature invalide
         print(f"Signature Stripe invalide: {e}")
         print(traceback.format_exc())
         return Response({"error": "Invalid signature"}, status=status.HTTP_401_UNAUTHORIZED)
