@@ -43,7 +43,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
 import traceback
-import threading
 
 
 def generate_verification_code():
@@ -162,7 +161,6 @@ def stripe_webhook(request):
 
             try:
                 order = Order.objects.get(id=order_id_int)
-                was_already_paid = order.payment_status == "paid"
                 order.payment_status = "paid"
                 order.fulfillment_status = "preparing"
                 payment_intent = safe_get(session, "payment_intent")
@@ -190,16 +188,15 @@ def stripe_webhook(request):
                     metadata_dict = repr(metadata)
                 print(f"Webhook debug: session type={type(session)}, metadata type={type(metadata)}, metadata={metadata_dict}")
 
-                # Éviter les blocages Stripe: l'email part en arrière-plan.
-                if not was_already_paid:
-                    email_thread = threading.Thread(
-                        target=send_order_confirmation_email,
-                        args=(order,),
-                        daemon=True,
-                    )
-                    email_thread.start()
+                if not order.confirmation_email_sent:
+                    email_sent = send_order_confirmation_email(order)
+                    if email_sent:
+                        order.confirmation_email_sent = True
+                        order.save(update_fields=["confirmation_email_sent", "updated_at"])
+                    else:
+                        raise RuntimeError("Confirmation email could not be sent")
                 else:
-                    print(f"Webhook: commande {order_id_int} déjà payée, email non renvoyé")
+                    print(f"Webhook: commande {order_id_int} email de confirmation déjà envoyé")
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
