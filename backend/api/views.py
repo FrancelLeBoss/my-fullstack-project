@@ -55,9 +55,14 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 # ===== EMAIL DE CONFIRMATION =====
 def send_order_confirmation_email(order_id):
     try:
-        # Re-fetch l'ordre dans le thread avec sa propre connexion DB
+        print(f"[EMAIL] Tentative envoi pour commande {order_id}")
+        print(f"[EMAIL] Backend: {settings.EMAIL_BACKEND}")
+        print(f"[EMAIL] Host user: {settings.EMAIL_HOST_USER}")
+
         order = Order.objects.prefetch_related("items__variant__product").get(id=order_id)
         user = order.user
+
+        print(f"[EMAIL] Destinataire: {user.email}")
 
         subject = f"Commande confirmée #{order.id} - Shopsy"
 
@@ -93,14 +98,13 @@ Shopsy Team
             [user.email],
             fail_silently=False,
         )
-        print(f"Email de confirmation envoyé à {user.email} pour la commande {order.id}")
+        print(f"[EMAIL] ✅ Email envoyé à {user.email} pour la commande {order.id}")
         return True
 
     except Exception as e:
-        print(f"Erreur lors de l'envoi de l'email de confirmation: {e}")
+        print(f"[EMAIL] ERREUR: {type(e).__name__}: {e}")
         print(traceback.format_exc())
         return False
-
 # ===== WEBHOOK STRIPE =====
 @csrf_exempt
 @api_view(["POST"])
