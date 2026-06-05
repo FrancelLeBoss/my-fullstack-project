@@ -227,6 +227,7 @@ class Order(models.Model):
         default="pending",
     )
     stripe_payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
+    confirmation_email_sent = models.BooleanField(default=False)
 
     def get_items_subtotal(self):
         return sum((item.line_total for item in self.items.all()), Decimal("0.00"))

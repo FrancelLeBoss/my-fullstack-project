@@ -179,6 +179,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "payment_status",
             "fulfillment_status",
             "stripe_payment_intent_id",
+            "confirmation_email_sent",
             "items",
         ]   
 
