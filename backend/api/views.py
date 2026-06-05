@@ -43,6 +43,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
 import traceback
+import threading
 
 
 def generate_verification_code():
@@ -95,8 +96,11 @@ Shopsy Team
             fail_silently=False
         )
         print(f"Email de confirmation envoyé à {user.email} pour la commande {order.id}")
+        return True
     except Exception as e:
         print(f"Erreur lors de l'envoi de l'email de confirmation: {e}")
+        print(traceback.format_exc())
+        return False
 
 # ===== WEBHOOK STRIPE =====
 @csrf_exempt
@@ -158,6 +162,7 @@ def stripe_webhook(request):
 
             try:
                 order = Order.objects.get(id=order_id_int)
+                was_already_paid = order.payment_status == "paid"
                 order.payment_status = "paid"
                 order.fulfillment_status = "preparing"
                 payment_intent = safe_get(session, "payment_intent")
@@ -167,8 +172,13 @@ def stripe_webhook(request):
                 print(f"Webhook: Commande {order_id_int} marquée comme payée")
 
                 user = order.user
-                Cart.objects.filter(user=user).delete()
-                print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
+                # Nettoyage non critique: ne doit pas faire échouer l'ACK Stripe.
+                try:
+                    Cart.objects.filter(user=user).delete()
+                    print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
+                except Exception as cart_exc:
+                    print(f"Webhook debug: cart cleanup failed: {cart_exc}")
+                    print(traceback.format_exc())
 
                 # Debugging: log metadata type/content to identify prod shape
                 try:
@@ -180,12 +190,16 @@ def stripe_webhook(request):
                     metadata_dict = repr(metadata)
                 print(f"Webhook debug: session type={type(session)}, metadata type={type(metadata)}, metadata={metadata_dict}")
 
-                # Envoyer l'email de confirmation (ne doit pas faire échouer le webhook)
-                try:
-                    send_order_confirmation_email(order)
-                except Exception as email_exc:
-                    print(f"Webhook debug: email send failed: {email_exc}")
-                    print(traceback.format_exc())
+                # Éviter les blocages Stripe: l'email part en arrière-plan.
+                if not was_already_paid:
+                    email_thread = threading.Thread(
+                        target=send_order_confirmation_email,
+                        args=(order,),
+                        daemon=True,
+                    )
+                    email_thread.start()
+                else:
+                    print(f"Webhook: commande {order_id_int} déjà payée, email non renvoyé")
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
@@ -207,7 +221,7 @@ def stripe_webhook(request):
         return Response(
             {
                 "error": "Webhook processing failed",
-                "detail": str(e),
+                "detail": f"{type(e).__name__}: {str(e) or repr(e)}",
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
