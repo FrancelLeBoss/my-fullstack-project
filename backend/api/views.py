@@ -124,7 +124,8 @@ def stripe_webhook(request):
         # Traiter l'événement
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
-            order_id = session.get("metadata", {}).get("order_id")
+            metadata = getattr(session, "metadata", None) or {}
+            order_id = metadata.get("order_id")
 
             if not order_id:
                 print("Webhook: order_id manquant dans les métadonnées")
