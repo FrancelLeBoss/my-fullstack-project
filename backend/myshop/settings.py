@@ -268,8 +268,9 @@ else:
     EMAIL_USE_TLS = True
     EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
     EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+    EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
 
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@shopsy.com")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL") or os.getenv("EMAIL_HOST_USER") or "noreply@shopsy.com"
 
 # Configuration du stockage des médias (S3 en production, système de fichiers local en développement)
 if DEBUG:

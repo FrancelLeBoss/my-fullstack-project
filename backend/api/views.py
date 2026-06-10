@@ -71,7 +71,7 @@ Bonjour {user.first_name or user.username},
 
 Merci pour votre achat! Votre commande a été confirmée.
 
---- Détails de la commande ---
+--- wscommande ---
 Numéro: {order.id}
 Montant total: ${order.total_price} CAD
 Paiement: {order.payment_status}
@@ -771,64 +771,6 @@ class ActivateAccountView(generics.RetrieveAPIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-
-# @csrf_exempt
-# @api_view(["POST"])
-# def register(request):
-#     """Gère l'enregistrement d'un nouvel utilisateur."""
-#     username = request.data.get("username")
-#     email = request.data.get("email")
-#     password = request.data.get("password")
-#     newsLetterSubscription = request.data.get("newsLetterSubscription")
-#     is_active = request.data.get("is_active")
-
-#     # Vérifier que tous les champs sont remplis
-#     if not username or not email or not password:
-#         return Response(
-#             {"error": "Username, email, and password are required."},
-#             status=HTTP_400_BAD_REQUEST,
-#         )
-
-#     # Vérifier si le nom d'utilisateur existe déjà
-#     if User.objects.filter(username=username).exists():
-#         return Response(
-#             {"error": "Username already exists."},
-#             status=HTTP_400_BAD_REQUEST,
-#         )
-
-#     # Vérifier si l'email existe déjà
-#     if User.objects.filter(email=email).exists():
-#         return Response(
-#             {"error": "Email already exists."},
-#             status=HTTP_400_BAD_REQUEST,
-#         )
-
-#     # Créer un nouvel utilisateur
-#     try:
-#         user = User.objects.create_user(
-#             username=username, email=email, password=password, newsLetterSubscription = newsLetterSubscription,
-#             is_active=is_active
-#         )
-#         user.save()
-
-#         # Générer un token pour l'utilisateur
-#         token, created = Token.objects.get_or_create(user=user)
-
-#         return Response(
-#             {
-#                 "message": "User registered successfully!",
-#                 "user": {
-#                     "username": user.username,
-#                     "email": user.email,
-#                 },
-#                 "token": token.key,
-#             },
-#             status=HTTP_200_OK,
-#         )
-#     except Exception as e:
-#         return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
-
 
 @csrf_exempt
 @api_view(["POST"])
