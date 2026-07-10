@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from "react-router-dom";
-import { new_price } from './Boutique';
+import { new_price } from "../utils/price";
 import { BsStarFill } from 'react-icons/bs';
 import { BiStar } from 'react-icons/bi';
 import { Link } from "react-router-dom";

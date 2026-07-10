@@ -6,11 +6,11 @@ import Cart from "./components/Cart/Cart";
 import Wishlist from "./components/Wishlist/Wishlist";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { Boutique } from "./pages/Boutique";
+import Boutique from "./pages/Boutique";
 import Product from "./pages/Product";
 import Home from "./pages/Home";
 import Contact from "./pages/Contact";
-import Login from "./pages/Login";
+import Login from "./pages/Login";  
 import { useDispatch, useSelector } from "react-redux";
 // Importez la nouvelle action 'rehydrateAuth' de votre userSlice
 import { rehydrateAuth } from "./redux/userSlice";
