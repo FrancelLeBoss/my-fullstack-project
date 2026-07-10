@@ -8,10 +8,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { reset as resetCart } from "../../redux/cartSlice";
 import { reset as resetWishlist } from "../../redux/WishlistSlice";
 import axiosInstance from "../../api/axiosInstance";
-import Swal from "sweetalert2";
 import type { RootState } from "../../redux/store";
 import { logout, rehydrateAuth } from "../../redux/userSlice";
 import ShopsyLogo from "../ShopsyLogo";
+import { fireThemedAlert, fireThemedToast } from "../../utils/sweetAlert";
 
 interface ImportMetaEnv { readonly VITE_API_BASE_URL: string }
 interface ImportMeta { readonly env: ImportMetaEnv }
@@ -100,15 +100,14 @@ const Navbar: React.FC<{
   }, [])
 
   const handleLogout = () => {
-    Swal.fire({
-      title: "Déconnexion",
-      text: "Êtes-vous sûr de vouloir vous déconnecter ?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#fea928",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Oui, me déconnecter !",
-    }).then(async (result) => {
+    fireThemedAlert({
+            icon: "warning",
+            title: "Déconnexion",
+            text: "Êtes-vous sûr de vouloir vous déconnecter ?",
+            showCancelButton: true,
+            confirmButtonText: "Oui, me déconnecter !",
+          })
+    .then(async (result) => {
       if (result.isConfirmed) {
         if (refreshToken) {
           try {
@@ -120,7 +119,11 @@ const Navbar: React.FC<{
         dispatch(logout())
         dispatch(resetCart())
         dispatch(resetWishlist())
-        Swal.fire("Déconnecté !", "Vous avez été déconnecté avec succès.", "success")
+        fireThemedToast({
+          icon: "success",
+          title: "Déconnecté !",
+          text: "Vous avez été déconnecté avec succès.",
+        })
       }
     })
   }

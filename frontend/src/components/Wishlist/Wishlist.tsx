@@ -3,7 +3,6 @@ import { resolveMediaUrl } from "../../utils/mediaUrl";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import Swal from "sweetalert2";
 import axios from "axios";
 import axiosInstance from "../../api/axiosInstance";
 import { login } from "../../redux/userSlice";
@@ -13,6 +12,7 @@ import {
   WishlistItem,
 } from "../../types/Product";
 import { RootState } from "../../redux/store";
+import { fireThemedAlert, fireThemedToast } from "../../utils/sweetAlert";
 
 interface WishlistProps {
   wishlistPopup: boolean;
@@ -126,13 +126,17 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
         type: "wishlist/removeFromWishlist",
         payload: { itemDeleted },
       });
-      Swal.fire(
-        "Supprimé",
-        "Produit retiré de la liste de souhaits.",
-        "success"
-      );
+      fireThemedToast({
+        icon: "success",
+        title: "Supprimé",
+        text: "Produit retiré de la liste de souhaits.",
+      });
     } catch (error) {
-      Swal.fire("Erreur", "Impossible de retirer l'article.", "error");
+      fireThemedAlert({
+        icon: "error",
+        title: "Erreur",
+        text: "Impossible de retirer l'article.",
+      });
     }
   };
 
@@ -141,13 +145,17 @@ const Wishlist = ({ wishlistPopup, setWishlistPopup }: WishlistProps) => {
     try {
       await axiosInstance.post(`${apiBaseUrl}api/wishlist/empty/`);
       dispatch({ type: "wishlist/clearWishlist" });
-      Swal.fire(
-        "Liste vidée",
-        "Votre liste de souhaits est maintenant vide.",
-        "success"
-      );
+      fireThemedToast({
+        icon: "success",
+        title: "Liste vidée",
+        text: "Votre liste de souhaits est maintenant vide.",
+      });
     } catch (error) {
-      Swal.fire("Erreur", "Impossible de vider la liste.", "error");
+      fireThemedAlert({
+        icon: "error",
+        title: "Erreur",
+        text: "Impossible de vider la liste.",
+      });
       console.error("Error clearing wishlist:", error);
     }
   };

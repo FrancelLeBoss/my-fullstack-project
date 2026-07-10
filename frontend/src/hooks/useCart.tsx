@@ -4,18 +4,18 @@ import axios from "axios";
 import axiosInstance from "../api/axiosInstance";
 import { RootState } from "../redux/store";
 import { CartItem, VariantImage } from "../types/Product";
-import Swal from "sweetalert2";
 import { se } from "date-fns/locale";
 import { resolveMediaUrl } from "../utils/mediaUrl";
+import { fireThemedAlert, fireThemedToast } from "../utils/sweetAlert";
 
 export default function useCart() {
   const dispatch = useDispatch();
   const { accessToken } = useSelector((s: RootState) => s.user);
+  const isAuthenticated = Boolean(accessToken);
   const storeItems = useSelector((s: RootState) => s.cart.items) as CartItem[];
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const [loading, setLoading] = useState(false);
   const [chooseSizeMsg, setChooseSizeMsg] = useState<string | null>(null);
-  const user = useSelector((s: RootState) => s.user.user);
   const [error, setError] = useState<string | null>(null);
 
   // Local state for optimistic updates
@@ -48,15 +48,14 @@ export default function useCart() {
   }, [localTotal]);
 
   const addToCart = useCallback(async (variantId: number, sizeId: number | null, quantity: number, checked: boolean) => {
-    if (!user) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Please log in to add items to your cart: '+user,
-            showConfirmButton: true,
-            confirmButtonText: 'Get it!',
-            confirmButtonColor: '#fea928',
-          });
-          return;
+    if (!isAuthenticated) {
+      fireThemedAlert({
+        icon: "warning",
+        title: "Connexion requise",
+        text: "Connecte-toi pour ajouter des articles à ton panier.",
+        confirmButtonText: "Compris",
+      });
+      return;
         }
     setLoading(true);
     setError(null);
@@ -71,14 +70,11 @@ export default function useCart() {
         },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-      //const cartData = res.data as Array<{ id: number; variant: number; size: number | null; quantity: number }>;
-      // refetch cart after adding
       fetchCart();
-      Swal.fire({
-        icon: 'success',
-        title: 'Item added to cart',
-        showConfirmButton: false,
-        timer: 1500
+      fireThemedToast({
+        icon: "success",
+        title: "Article ajouté",
+        text: "L’article a bien été ajouté à ton panier.",
       });
       setChooseSizeMsg(null);
     } catch (err: any) {
