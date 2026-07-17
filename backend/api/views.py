@@ -43,7 +43,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
 import traceback
-import threading
 
 
 def generate_verification_code():
@@ -55,9 +54,14 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 # ===== EMAIL DE CONFIRMATION =====
 def send_order_confirmation_email(order_id):
     try:
-        # Re-fetch l'ordre dans le thread avec sa propre connexion DB
+        # Re-fetch de la commande pour travailler sur un état DB à jour.
         order = Order.objects.prefetch_related("items__variant__product").get(id=order_id)
         user = order.user
+        recipient_email = (user.email or "").strip()
+
+        if not recipient_email:
+            print(f"Email de confirmation non envoyé: utilisateur {user.id} sans email")
+            return False
 
         subject = f"Commande confirmée #{order.id} - Shopsy"
 
@@ -90,10 +94,10 @@ Shopsy Team
             subject,
             message,
             settings.DEFAULT_FROM_EMAIL,
-            [user.email],
+            [recipient_email],
             fail_silently=False,
         )
-        print(f"Email de confirmation envoyé à {user.email} pour la commande {order.id}")
+        print(f"Email de confirmation envoyé à {recipient_email} pour la commande {order.id}")
         return True
 
     except Exception as e:
@@ -107,7 +111,7 @@ Shopsy Team
 def stripe_webhook(request):
     """
     Webhook endpoint pour les événements Stripe.
-    Écoute checkout.session.completed et met à jour l'ordre.
+    Écoute checkout.session.completed / payment_intent.succeeded et met à jour l'ordre.
     """
     try:
         webhook_secret = settings.STRIPE_WEBHOOK_SECRET
@@ -121,31 +125,62 @@ def stripe_webhook(request):
             payload, sig_header, webhook_secret
         )
 
+        # Stripe peut renvoyer un dict ou un StripeObject selon le contexte SDK.
+        # Ce helper évite les AttributeError sur ".get".
+        def safe_get(obj, key, default=None):
+            if obj is None:
+                return default
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            try:
+                return obj[key]
+            except Exception:
+                pass
+            return getattr(obj, key, default)
+
+        def to_metadata_dict(metadata_raw):
+            if isinstance(metadata_raw, dict):
+                return metadata_raw
+            try:
+                return dict(metadata_raw or {})
+            except Exception:
+                to_dict = getattr(metadata_raw, "to_dict", None)
+                if callable(to_dict):
+                    return to_dict() or {}
+            return {}
+
+        def mark_paid_and_send_email(order, payment_intent_id=None):
+            order.payment_status = "paid"
+            order.fulfillment_status = "preparing"
+            if payment_intent_id:
+                order.stripe_payment_intent_id = str(payment_intent_id)
+
+            order.save(update_fields=["payment_status", "fulfillment_status", "stripe_payment_intent_id", "updated_at"])
+
+            user = order.user
+            try:
+                Cart.objects.filter(user=user).delete()
+                print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
+            except Exception as cart_exc:
+                print(f"Webhook debug: cart cleanup failed: {cart_exc}")
+                print(traceback.format_exc())
+
+            if order.confirmation_email_sent:
+                print(f"Webhook: email déjà envoyé pour la commande {order.id}")
+                return True
+
+            email_sent = send_order_confirmation_email(order.id)
+            if email_sent:
+                order.confirmation_email_sent = True
+                order.save(update_fields=["confirmation_email_sent", "updated_at"])
+                return True
+
+            print(f"Webhook: échec envoi email pour commande {order.id}, Stripe pourra retenter")
+            return False
+
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
-
-            # Stripe peut renvoyer un dict ou un StripeObject selon le contexte SDK.
-            # Ce helper évite les AttributeError sur ".get".
-            def safe_get(obj, key, default=None):
-                if obj is None:
-                    return default
-                if isinstance(obj, dict):
-                    return obj.get(key, default)
-                try:
-                    return obj[key]
-                except Exception:
-                    pass
-                return getattr(obj, key, default)
-
-            metadata_raw = safe_get(session, "metadata", {}) or {}
-            if isinstance(metadata_raw, dict):
-                metadata = metadata_raw
-            else:
-                try:
-                    metadata = dict(metadata_raw)
-                except Exception:
-                    to_dict = getattr(metadata_raw, "to_dict", None)
-                    metadata = to_dict() if callable(to_dict) else {}
+            metadata = to_metadata_dict(safe_get(session, "metadata", {}) or {})
 
             order_id = metadata.get("order_id")
 
@@ -161,23 +196,9 @@ def stripe_webhook(request):
 
             try:
                 order = Order.objects.get(id=order_id_int)
-                was_already_paid = order.payment_status == "paid"
-                order.payment_status = "paid"
-                order.fulfillment_status = "preparing"
                 payment_intent = safe_get(session, "payment_intent")
-                if payment_intent:
-                    order.stripe_payment_intent_id = str(payment_intent)
-                order.save(update_fields=["payment_status", "fulfillment_status", "stripe_payment_intent_id", "updated_at"])
+                email_ok = mark_paid_and_send_email(order, payment_intent_id=payment_intent)
                 print(f"Webhook: Commande {order_id_int} marquée comme payée")
-
-                user = order.user
-                # Nettoyage non critique: ne doit pas faire échouer l'ACK Stripe.
-                try:
-                    Cart.objects.filter(user=user).delete()
-                    print(f"Webhook: Panier de l'utilisateur {user.id} vidé après paiement")
-                except Exception as cart_exc:
-                    print(f"Webhook debug: cart cleanup failed: {cart_exc}")
-                    print(traceback.format_exc())
 
                 # Debugging: log metadata type/content to identify prod shape
                 try:
@@ -189,20 +210,36 @@ def stripe_webhook(request):
                     metadata_dict = repr(metadata)
                 print(f"Webhook debug: session type={type(session)}, metadata type={type(metadata)}, metadata={metadata_dict}")
 
-                # Éviter les blocages Stripe: l'email part en arrière-plan.
-                if not was_already_paid:
-                    email_thread = threading.Thread(
-                        target=send_order_confirmation_email,
-                        args=(order.id,),
-                        # daemon=True,
-                    )
-                    email_thread.start()
-                else:
-                    print(f"Webhook: commande {order_id_int} déjà payée, email non renvoyé")
+                if not email_ok:
+                    return Response({"error": "Email send failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             except Order.DoesNotExist:
                 print(f"Webhook: Commande {order_id_int} introuvable")
                 return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        elif event["type"] == "payment_intent.succeeded":
+            intent = event["data"]["object"]
+            intent_id = safe_get(intent, "id")
+            metadata = to_metadata_dict(safe_get(intent, "metadata", {}) or {})
+
+            order = None
+            if intent_id:
+                order = Order.objects.filter(stripe_payment_intent_id=str(intent_id)).first()
+
+            if order is None and metadata.get("order_id"):
+                try:
+                    order = Order.objects.get(id=int(metadata.get("order_id")))
+                except Exception:
+                    order = None
+
+            if order is None:
+                print(f"Webhook PI: aucune commande trouvée pour payment_intent={intent_id}")
+                return Response({"status": "ignored"}, status=status.HTTP_200_OK)
+
+            email_ok = mark_paid_and_send_email(order, payment_intent_id=intent_id)
+            print(f"Webhook PI: Commande {order.id} marquée comme payée depuis payment_intent.succeeded")
+            if not email_ok:
+                return Response({"error": "Email send failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({"status": "success"}, status=status.HTTP_200_OK)
 
