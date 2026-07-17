@@ -161,7 +161,9 @@ const CartPage: React.FC = () => {
             </div>
 
             <button
-              onClick={handleCheckout}
+              onClick={() => {
+                window.location.href = "/checkout";
+              }}
               disabled={loading || !items.some((item) => item.checked)}
               className="w-full mt-5 py-3.5 rounded-xl flex items-center justify-center gap-2
               bg-gradient-to-r from-primary to-secondary text-white font-semibold
@@ -169,12 +171,12 @@ const CartPage: React.FC = () => {
               hover:scale-[1.015] active:scale-[0.985] transition-all duration-200
               disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none"
             >
-              <span>Pay with</span>
-              <FaStripe className="text-3xl" />
+              <span>Checkout</span>
             </button>
 
-            <p className="text-[11px] text-center text-gray-400 dark:text-gray-500 leading-relaxed pt-1">
-              Secure checkout powered by Stripe.
+            <p className="text-[11px] text-center text-gray-400 dark:text-gray-500 leading-relaxed pt-1 flex items-center gap-2">
+              Secure checkout powered by
+              <FaStripe className="text-3xl" />
             </p>
           </div>
         </aside>

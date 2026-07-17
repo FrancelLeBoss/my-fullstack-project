@@ -6,6 +6,7 @@ export interface User {
   first_name?: string;
   last_name?: string;
   phone_number?: string;
+  addresses?: Address[]; // Liste d'adresses associées à l'utilisateur
   // Ajoutez d'autres propriétés utilisateur selon vos besoins
 }
 
@@ -13,6 +14,7 @@ export interface Address {
   id: number;
   user: number; // ID de l'utilisateur auquel cette adresse appartient
   street_address: string;
+  apartment?: string;
   city: string;
   state_province: string;
   postal_code: string;

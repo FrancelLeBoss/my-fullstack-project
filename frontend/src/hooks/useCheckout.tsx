@@ -3,6 +3,7 @@ import axiosInstance from "../api/axiosInstance";
 import { useSelector } from "react-redux";
 import { RootState } from "../redux/store";
 import useCart from "./useCart";
+import { fireThemedAlert } from "../utils/sweetAlert";
 
 export const calculateCheckoutAmounts = (subtotal: number, promoAmount = 0) => {
   const safeSubtotal = Number(subtotal || 0);
@@ -29,15 +30,39 @@ export default function useCheckout() {
   const handleCheckout = async () => {
     // 1. Vérification de sécurité
     if (!isAuthenticated) {
-      return Swal.fire({ title: "Please login", icon: "info", timer: 1500, showConfirmButton: false });
+      return fireThemedAlert({
+        title: "Please login",
+        text: "You need to be logged in to proceed to checkout.",
+        icon: "info",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     }
+
+    if (items.length === 0) { 
+      return fireThemedAlert({
+        title: "Empty Cart",
+        text: "Your cart is empty. Please add items to proceed.",
+        icon: "warning",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    }
+
+    // 2. Vérification des articles sélectionnés
     const selectedItems = items.filter((item) => item.checked);
 
     if (selectedItems.length === 0) {
-      return Swal.fire("Empty selection", "Please select at least one item.", "warning");
+      return fireThemedAlert({
+        title: "Empty selection",
+        text: "Please select at least one item to proceed to checkout.",
+        icon: "warning",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     }
 
-    // 2. Calcul du total pour l'affichage dans l'alerte
+    // 3. Calcul du total pour l'affichage dans l'alerte
     const pricing = calculateCheckoutAmounts(totalPrice, 0);
     const finalAmount = pricing.total.toFixed(2);
 

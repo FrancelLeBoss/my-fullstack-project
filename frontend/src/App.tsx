@@ -33,7 +33,6 @@ function App() {
   const [wishlistPopup, setWishlistPopup] = useState(false);
   const [_category, setCategory] = useState(1);
   const [message, setMessage] = useState("");
-
   const handleOrderPopup = () => {
     setOrderPopup(!orderPopup);
   };

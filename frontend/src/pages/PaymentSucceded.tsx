@@ -21,6 +21,32 @@ const buildFallbackImage = (label: string) => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
+const resolveMediaUrl = (apiBaseUrl: string, source: unknown, fallbackLabel: string) => {
+  if (!source) {
+    return buildFallbackImage(fallbackLabel);
+  }
+
+  const rawSource =
+    typeof source === "string"
+      ? source
+      : typeof source === "object" && source !== null
+      ? ((source as { image?: unknown; url?: unknown; src?: unknown }).image ??
+          (source as { image?: unknown; url?: unknown; src?: unknown }).url ??
+          (source as { image?: unknown; url?: unknown; src?: unknown }).src)
+      : null;
+
+  if (typeof rawSource !== "string" || rawSource.trim().length === 0) {
+    return buildFallbackImage(fallbackLabel);
+  }
+
+  if (/^(https?:)?\/\//i.test(rawSource) || rawSource.startsWith("data:")) {
+    return rawSource;
+  }
+
+  const normalizedPath = rawSource.startsWith("/") ? rawSource : `/${rawSource}`;
+  return `${apiBaseUrl.replace(/\/$/, "")}${normalizedPath}`;
+};
+
 
 const PaymentSucceded: React.FC = () => {
   const { order_id } = useParams<{ order_id: string }>();
@@ -108,9 +134,7 @@ const PaymentSucceded: React.FC = () => {
               const variant = response.data;
               const mainImg =
                 variant.images?.find((img: ProductVariantImage) => img.mainImage) || variant.images?.[0];
-              const imageUrl = mainImg?.image
-                ? `${apiBaseUrl}${mainImg.image}`
-                : buildFallbackImage(`Produit ${item.variant}`);
+              const imageUrl = resolveMediaUrl(apiBaseUrl, mainImg, `Produit ${item.variant}`);
 
               let sizeName = "N/A";
               if (item.size) {

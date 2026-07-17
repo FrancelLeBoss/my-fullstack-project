@@ -12,6 +12,7 @@ const ImageList = [
         description: "Upgrade your wardrobe without breaking the bank. From sharp casualwear to weekend essentials — now at half the price.",
         badge: "Limited Time",
         cta: "Shop Men's",
+        lien: "/category/men-wear",
     },
     {
         id: 2,
@@ -20,14 +21,16 @@ const ImageList = [
         description: "Fresh styles, unbeatable prices. From everyday looks to statement pieces. Free shipping, no minimum.",
         badge: "New Arrivals",
         cta: "Shop Women's",
+        lien: "/category/women-wear",
     },
     {
         id: 3,
         img: Image3,
-        title: "70% off on all Products Sale",
-        description: "Our biggest sale of the season is live. Thousands of styles, now up to 70% off. Top picks selling out fast.",
-        badge: "🔥 Hot Deal",
-        cta: "Shop the Sale",
+        title: "40% off on all children's Wear",
+        description: "Our biggest sale of the season is live. Thousands of styles, now up to 40% off. Top picks selling out fast.",
+        badge: "🔥 Hot children Deal",
+        cta: "Enjoy children's best offfers",
+        lien: "/category/children-wear",
     },
 ]
 
@@ -103,7 +106,9 @@ const Hero = ({ handleOrderPopup, message }: HeroProps) => {
                                     data-aos-once="true"
                                 >
                                     <button
-                                        onClick={handleOrderPopup}
+                                        onClick={() => {
+                                            window.location.href = data.lien;
+                                        }}
                                         className="bg-gradient-to-r from-primary to-secondary
                                         text-white font-bold px-6 py-3 rounded-xl
                                         hover:scale-105 active:scale-95

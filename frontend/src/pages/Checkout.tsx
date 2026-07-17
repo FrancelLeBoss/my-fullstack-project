@@ -1,28 +1,55 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import useCart from "../hooks/useCart";
 import useCheckout from "../hooks/useCheckout";
+import { RootState } from "../redux/store";
+import { useSelector } from "react-redux";
+import { User } from "../types/User";
+import { FaStripe } from "react-icons/fa";
 
 const Checkout: React.FC = () => {
   const { items, totalPrice, calculateShipping, calculateTaxes, imageUrl, loading } = useCart();
   const { handleCheckout } = useCheckout();
+  const { user, addresses } = useSelector((state: RootState) => state.user);
+  const userProfile: User | null = user;
 
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [streetAddress, setStreetAddress] = useState("");
-  const [apartment, setApartment] = useState("");
-  const [city, setCity] = useState("");
-  const [stateProvince, setStateProvince] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [country, setCountry] = useState("Canada");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone_number || "");
+  const [firstName, setFirstName] = useState(user?.first_name || "");
+  const [lastName, setLastName] = useState(user?.last_name || "");
+  const [streetAddress, setStreetAddress] = useState(user?.addresses?.[0]?.street_address || "");
+  const [apartment, setApartment] = useState(user?.addresses?.[0]?.apartment || "");
+  const [city, setCity] = useState(user?.addresses?.[0]?.city || "");
+  const [stateProvince, setStateProvince] = useState(user?.addresses?.[0]?.state_province || "");
+  const [postalCode, setPostalCode] = useState(user?.addresses?.[0]?.postal_code || "");
+  const [country, setCountry] = useState( user?.addresses?.[0]?.country || "Canada");
   const [shippingMethod, setShippingMethod] = useState<"standard" | "express">("standard");
   const [promoCode, setPromoCode] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!userProfile) return;
+
+    const defaultAddress =
+      addresses?.find((address) => address.is_default) ??
+      userProfile.addresses?.find((address) => address.is_default) ??
+      addresses?.[0] ??
+      userProfile.addresses?.[0];
+
+    setEmail(userProfile.email || "");
+    setPhone(userProfile.phone_number || "");
+    setFirstName(userProfile.first_name || "");
+    setLastName(userProfile.last_name || "");
+    setStreetAddress(defaultAddress?.street_address || "");
+    setCity(defaultAddress?.city || "");
+    setStateProvince(defaultAddress?.state_province || "");
+    setPostalCode(defaultAddress?.postal_code || "");
+    setCountry(defaultAddress?.country || "Canada");
+  }, [addresses, userProfile]);
+
+  
   const selectedItems = useMemo(() => items.filter((item) => item.checked), [items]);
 
   const shipping = useMemo(() => {
@@ -317,9 +344,9 @@ const Checkout: React.FC = () => {
                 type="button"
                 onClick={handleCheckout}
                 disabled={!canProceed || loading}
-                className="w-full bg-primary text-white py-3 rounded-lg font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition"
-              >
-                Continuer vers le paiement
+                className="flex justify-center items-center gap-2 w-full bg-primary text-white py-3 rounded-lg font-bold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition"
+              > Checkout with 
+                <FaStripe className="text-3xl" />
               </button>
 
               <Link
