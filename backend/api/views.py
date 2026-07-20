@@ -19,7 +19,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 import random
 from .serializers import RegisterSerializer
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
 from .serializers import (
     ProductSerializer,
     ProductVariantSerializer,
@@ -52,58 +52,194 @@ def generate_verification_code():
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # ===== EMAIL DE CONFIRMATION =====
+ 
 def send_order_confirmation_email(order_id):
     try:
         # Re-fetch de la commande pour travailler sur un état DB à jour.
         order = Order.objects.prefetch_related("items__variant__product").get(id=order_id)
         user = order.user
         recipient_email = (user.email or "").strip()
-
+ 
         if not recipient_email:
             print(f"Email de confirmation non envoyé: utilisateur {user.id} sans email")
             return False
-
+ 
         subject = f"Commande confirmée #{order.id} - Shopsy"
-
+        display_name = user.first_name or user.username
+ 
+        # ----- Version texte brut (fallback) -----
         items_detail = "\n".join([
             f"  • {item.variant.product.title} ({item.variant.color}) x{item.quantity} @ ${item.price} CAD"
             for item in order.items.all()
         ])
-
-        message = f"""
-Bonjour {user.first_name or user.username},
-
+ 
+        text_message = f"""
+Bonjour {display_name},
+ 
 Merci pour votre achat! Votre commande a été confirmée.
-
---- wscommande ---
+ 
+--- Commande ---
 Numéro: {order.id}
 Montant total: ${order.total_price} CAD
 Paiement: {order.payment_status}
 Livraison: {order.fulfillment_status}
-
+ 
 Produits:
 {items_detail}
-
+ 
 Vous pouvez consulter votre commande à tout moment dans votre profil.
-
+ 
 Merci de votre confiance!
 Shopsy Team
         """
-
-        send_mail(
+ 
+        # ----- Version HTML -----
+        items_html = "".join([
+            f"""
+            <tr>
+              <td style="padding:16px 0;border-bottom:1px solid #eee;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align:top;">
+                      <p style="margin:0;font-size:15px;font-weight:700;color:#0f1115;">{item.variant.product.title}</p>
+                      <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Variante: {item.variant.color} &nbsp;|&nbsp; Qt: {item.quantity}</p>
+                    </td>
+                    <td style="vertical-align:top;text-align:right;white-space:nowrap;">
+                      <p style="margin:0;font-size:15px;font-weight:700;color:#0f1115;">${item.price} CAD</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            """
+            for item in order.items.all()
+        ])
+ 
+        html_message = f"""\
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{subject}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;max-width:600px;width:100%;">
+ 
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#0f1115;padding:24px 32px;">
+              <span style="font-size:22px;font-weight:800;color:#ffffff;">shop<span style="color:#f4a825;">sy</span></span>
+            </td>
+          </tr>
+ 
+          <!-- Bannière confirmation -->
+          <tr>
+            <td style="background-color:#e9f7ef;padding:32px;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:0.5px;color:#1f8a4c;text-transform:uppercase;">Paiement confirmé</p>
+              <h1 style="margin:0 0 12px;font-size:26px;font-weight:800;color:#0f1115;">Merci pour votre commande</h1>
+              <p style="margin:0;font-size:14px;color:#3f5f4f;">Bonjour {display_name}, votre paiement a bien été reçu.</p>
+            </td>
+          </tr>
+ 
+          <!-- Infos commande -->
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td width="50%" style="padding:0 8px 16px 0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;">
+                      <tr><td style="padding:16px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Numéro de commande</p>
+                        <p style="margin:0;font-size:18px;font-weight:800;color:#0f1115;">#{order.id}</p>
+                      </td></tr>
+                    </table>
+                  </td>
+                  <td width="50%" style="padding:0 0 16px 8px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;">
+                      <tr><td style="padding:16px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Montant total</p>
+                        <p style="margin:0;font-size:18px;font-weight:800;color:#0f1115;">${order.total_price} CAD</p>
+                      </td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="50%" style="padding:0 8px 16px 0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;">
+                      <tr><td style="padding:16px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Paiement</p>
+                        <p style="margin:0;font-size:18px;font-weight:800;color:#0f1115;text-transform:uppercase;">{order.payment_status}</p>
+                      </td></tr>
+                    </table>
+                  </td>
+                  <td width="50%" style="padding:0 0 16px 8px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;">
+                      <tr><td style="padding:16px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Livraison</p>
+                        <p style="margin:0;font-size:18px;font-weight:800;color:#0f1115;text-transform:uppercase;">{order.fulfillment_status}</p>
+                      </td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+ 
+          <!-- Produits -->
+          <tr>
+            <td style="padding:8px 32px 32px;">
+              <p style="margin:0 0 8px;font-size:15px;font-weight:800;color:#0f1115;text-transform:uppercase;">Produits commandés</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                {items_html}
+              </table>
+            </td>
+          </tr>
+ 
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 32px 32px;">
+              <p style="margin:0;font-size:14px;color:#4b5563;">Vous pouvez consulter votre commande à tout moment dans votre profil Shopsy.</p>
+            </td>
+          </tr>
+ 
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f9fafb;padding:24px 32px;border-top:1px solid #eee;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;">Merci de votre confiance — Shopsy Team</p>
+            </td>
+          </tr>
+ 
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+ 
+        email = EmailMultiAlternatives(
             subject,
-            message,
+            text_message,
             settings.DEFAULT_FROM_EMAIL,
             [recipient_email],
-            fail_silently=False,
         )
+        email.attach_alternative(html_message, "text/html")
+        email.send(fail_silently=False)
+ 
         print(f"Email de confirmation envoyé à {recipient_email} pour la commande {order.id}")
         return True
-
+ 
     except Exception as e:
         print(f"Erreur lors de l'envoi de l'email de confirmation: {e}")
         print(traceback.format_exc())
         return False
+ 
+
+
 
 # ===== WEBHOOK STRIPE =====
 @csrf_exempt
