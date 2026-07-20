@@ -14,3 +14,4 @@ stripe
 django-storages==1.14.4
 boto3==1.35.91
 whitenoise==6.4.0  # Pour servir les fichiers statiques en production
+django-anymail # Pour l'envoi d'e-mails avec Resend
